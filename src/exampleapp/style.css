@@ -1,0 +1,7 @@
+app {
+  background-color: aqua;
+}
+
+app#headerBar {
+  background-color: pink;
+}
