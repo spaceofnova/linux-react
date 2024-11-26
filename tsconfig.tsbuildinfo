@@ -1,0 +1,1 @@
+{"root":["./vite.config.ts","./src/main.tsx","./src/components/WMDisplay.tsx","./src/components/Window.tsx","./src/stores/appstore.ts","./src/stores/themeStore.ts","./src/stores/windowStore.ts","./src/types/storeTypes.ts","./src/variables/easings.ts"],"errors":true,"version":"5.7.2"}

@@ -39,8 +39,8 @@ export interface WindowStoreType {
   moveWindow: (id: string, x: number, y: number, relative: boolean) => void;
   resizeWindow: (
     id: string,
-    width: number | string,
-    height: number | string,
+    width: number,
+    height: number,
     newpos: Position
   ) => void;
 }

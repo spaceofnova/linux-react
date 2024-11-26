@@ -35,7 +35,12 @@ export const Window: React.FC<WindowType> = ({
         moveWindow(id, d.x, d.y, false);
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
-        resizeWindow(id, ref.style.width, ref.style.height, position);
+        resizeWindow(
+          id,
+          parseInt(ref.style.width),
+          parseInt(ref.style.height),
+          position
+        );
       }}
       onMouseDown={() => focusWindow(id)}
     >
