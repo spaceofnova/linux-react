@@ -4,19 +4,25 @@ import { Rnd } from "react-rnd";
 import React, { useCallback } from "react";
 import { motion } from "motion/react";
 import { easings } from "@/variables/easings";
+import { Maximize2Icon, Minimize2Icon } from "lucide-react";
 
 export const Window: React.FC<WindowType> = ({
   id,
   title,
-  x,
-  y,
-  width,
-  height,
+  position,
+  size,
   isFocused,
   zIndex,
+  isMaximized,
 }) => {
-  const { focusWindow, closeWindow, moveWindow, resizeWindow } =
-    useWindowStore();
+  const {
+    focusWindow,
+    closeWindow,
+    moveWindow,
+    resizeWindow,
+    maximizeWindow,
+    restoreWindow,
+  } = useWindowStore();
 
   const handleClose = useCallback(() => {
     closeWindow(id);
@@ -26,21 +32,18 @@ export const Window: React.FC<WindowType> = ({
   return (
     <Rnd
       style={{ zIndex: zIndex }}
-      size={{
-        width,
-        height,
-      }}
-      position={{ x, y }}
+      size={{ width: size.width, height: size.height }}
+      position={position}
       onDragStop={(e, d) => {
         moveWindow(id, d.x, d.y, false);
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
-        resizeWindow(
-          id,
-          parseInt(ref.style.width),
-          parseInt(ref.style.height),
-          position
-        );
+        const size = {
+          width: parseInt(ref.style.width),
+          height: parseInt(ref.style.height),
+        };
+
+        resizeWindow(id, size, position);
       }}
       onMouseDown={() => focusWindow(id)}
     >
@@ -60,6 +63,15 @@ export const Window: React.FC<WindowType> = ({
         {title}
         {isFocused ? "true" : "false"}
         <button onClick={handleClose}>Close me</button>
+        {isMaximized ? (
+          <button onClick={() => restoreWindow(id)}>
+            <Minimize2Icon />
+          </button>
+        ) : (
+          <button onClick={() => maximizeWindow(id)}>
+            <Maximize2Icon />
+          </button>
+        )}
       </motion.div>
     </Rnd>
   );

@@ -1,14 +1,15 @@
 import { create } from "zustand";
-import { v4 as uuidv4 } from "uuid";
 import { WindowStoreType, WindowType } from "@/types/storeTypes";
+import { customAlphabet } from "nanoid";
+const alphabet =
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const nanoid = customAlphabet(alphabet, 12);
 
 const defaultWindow: WindowType = {
-  id: uuidv4(),
+  id: nanoid(),
   title: "Test Name",
-  x: 100,
-  y: 100,
-  width: 300,
-  height: 200,
+  position: { x: 100, y: 100 },
+  size: { width: 300, height: 200 },
   isFocused: false,
   isMaximized: false,
   isMinimized: false,
@@ -19,14 +20,13 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
   activeWindowId: null,
 
   createWindow: (title) => {
-    const newWindowId = uuidv4();
+    const newWindowId = nanoid();
     const newWindow = {
       id: newWindowId,
       title,
-      x: 100,
-      y: 100,
+      position: { x: 100, y: 100 },
       width: 300,
-      height: 200,
+      size: { width: 300, height: 200 },
       isFocused: false,
       isMaximized: false,
       isMinimized: false,
@@ -84,10 +84,13 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
           ? {
               ...win,
               isMaximized: true,
-              x: 0,
-              y: 0,
-              width: window.innerWidth,
-              height: window.innerHeight,
+              position: { x: 0, y: 0 },
+              prevSize: win.size,
+              prevPos: win.position,
+              size: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+              },
             }
           : win
       );
@@ -98,18 +101,25 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
   minimizeWindow: (id) => {
     set((state) => {
       const updatedWindows = state.windows.map((window) =>
-        window.id === id ? { ...window, isMinimized: true } : window
+        window.id === id
+          ? { ...window, isMinimized: true, position: window.prevPos }
+          : window
       );
       return { windows: updatedWindows };
     });
   },
 
-  restoreWindow: () => {
+  restoreWindow: (id) => {
     set((state) => {
       const updatedWindows = state.windows.map((window) => ({
-        ...window,
-        isMaximized: false,
-        isMinimized: false,
+        ...(window.id === id
+          ? {
+              ...window,
+              isMaximized: false,
+              size: window.prevSize,
+              position: window.prevPos,
+            }
+          : window),
       }));
       return { windows: updatedWindows };
     });
@@ -120,7 +130,13 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
           window.id === id
-            ? { ...window, x: window.x + x, y: window.y + y }
+            ? {
+                ...window,
+                position: {
+                  x: window.position.x + x,
+                  y: window.position.y + y,
+                },
+              }
             : window
         );
         return { windows: updatedWindows };
@@ -128,18 +144,18 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     } else {
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
-          window.id === id ? { ...window, x, y } : window
+          window.id === id ? { ...window, position: { x, y } } : window
         );
         return { windows: updatedWindows };
       });
     }
   },
 
-  resizeWindow: (id, width, height, newpos) => {
+  resizeWindow: (id, size, newpos) => {
     set((state) => {
       const updatedWindows = state.windows.map((window) =>
         window.id === id
-          ? { ...window, width, height, x: newpos.x, y: newpos.y }
+          ? { ...window, size, position: { x: newpos.x, y: newpos.y } }
           : window
       );
       return { windows: updatedWindows };

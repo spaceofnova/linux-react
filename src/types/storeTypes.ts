@@ -1,3 +1,4 @@
+import { Size } from "re-resizable";
 import { Position } from "react-rnd";
 
 export interface AppType {
@@ -17,13 +18,13 @@ export interface AppStoreType {
 export interface WindowType {
   id: string;
   title: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  position: Position;
   isFocused: boolean;
   isMaximized: boolean;
   isMinimized: boolean;
+  size?: Size;
+  prevSize?: Size;
+  prevPos?: Position;
   zIndex?: number;
 }
 
@@ -37,12 +38,7 @@ export interface WindowStoreType {
   minimizeWindow: (id: string) => void;
   restoreWindow: (id: string) => void;
   moveWindow: (id: string, x: number, y: number, relative: boolean) => void;
-  resizeWindow: (
-    id: string,
-    width: number,
-    height: number,
-    newpos: Position
-  ) => void;
+  resizeWindow: (id: string, Size: Size, newpos: Position) => void;
 }
 
 export interface Colors {
