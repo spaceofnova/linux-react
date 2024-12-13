@@ -2,11 +2,9 @@ import { Window } from "@/components/Window";
 import { useWindowStore } from "@/stores/windowStore";
 import { AnimatePresence } from "motion/react";
 import { useEffect, useRef } from "react";
-import TEMP__StyleEditor from "./TEMP__StyleEditor";
 
 export const WindowManager = () => {
-  const { windows, activeWindowId, moveWindow, focusWindow, createWindow } =
-    useWindowStore();
+  const { windows, activeWindowId, focusWindow } = useWindowStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,21 +24,10 @@ export const WindowManager = () => {
     };
   }, [focusWindow]);
 
-  const spawnWindow = () => {
-    createWindow("New Window");
-  };
-
-  const moveWinTest = () => {
-    moveWindow(windows[0].id, -10, 0, true);
-  };
-
   return (
-    <div ref={containerRef}>
-      <pre>{JSON.stringify(windows, null, 2)}</pre>
+    <div ref={containerRef} className="bg-blue-400">
+      <pre>Window Count: {windows.length}</pre>
       <pre>{activeWindowId}</pre>
-      <button onClick={spawnWindow}>Spawn</button>
-      <button onClick={moveWinTest}>Move</button>
-      <TEMP__StyleEditor />
       <AnimatePresence>
         {windows.map((window) => (
           <Window

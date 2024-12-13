@@ -4,11 +4,12 @@ import { Position } from "react-rnd";
 export interface AppType {
   name: string;
   version: string | number;
-  location: string;
+  path: string;
 }
 
 export interface AppStoreType {
   apps: AppType[];
+  launchApp: (appname: string) => void;
   setApps: (apps: AppType[]) => void;
   addApp: (app: AppType) => void;
 }
@@ -22,22 +23,23 @@ export interface WindowType {
   isFocused: boolean;
   isMaximized: boolean;
   isMinimized: boolean;
-  size?: Size;
+  size?: Size | undefined;
   prevSize?: Size;
   prevPos?: Position;
   zIndex?: number;
+  content?: string | JSX.Element | Element;
 }
 
 export interface WindowStoreType {
   windows: WindowType[];
   activeWindowId: string | null;
-  createWindow: (title: string) => void;
-  focusWindow: (id: string) => void;
+  createWindow: (window: WindowType) => void;
+  focusWindow: (id: string | null) => void;
   closeWindow: (id: string) => void;
   maximizeWindow: (id: string) => void;
   minimizeWindow: (id: string) => void;
   restoreWindow: (id: string) => void;
-  moveWindow: (id: string, x: number, y: number, relative: boolean) => void;
+  moveWindow: (id: string, position: Position, relative: boolean) => void;
   resizeWindow: (id: string, Size: Size, newpos: Position) => void;
 }
 

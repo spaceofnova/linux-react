@@ -1,0 +1,75 @@
+.window {
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  min-height: 100px;
+  overflow: hidden;
+}
+
+.window.foc {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
+}
+
+.window-titlebar {
+  background-color: hsl(var(--muted));
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid hsl(var(--border));
+  height: 32px;
+}
+
+.window-title {
+  user-select: none;
+  color: hsl(var(--foreground));
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.window-button {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.window-close {
+  background-color: #ff5f57;
+}
+
+.window-minimize {
+  background-color: #ffbd2e;
+}
+
+.window-maximize {
+  background-color: #28c940;
+}
+
+.window-content {
+  padding: 16px;
+  height: calc(100% - 32px);
+  color: hsl(var(--foreground));
+}
+
+.window.dragging {
+  opacity: 0.8;
+  cursor: move;
+}
+
+.window-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+}

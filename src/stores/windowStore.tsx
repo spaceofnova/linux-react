@@ -7,29 +7,39 @@ const nanoid = customAlphabet(alphabet, 12);
 
 const defaultWindow: WindowType = {
   id: nanoid(),
-  title: "Test Name",
+  title: "File Manager",
   position: { x: 100, y: 100 },
   size: { width: 300, height: 200 },
   isFocused: false,
   isMaximized: false,
   isMinimized: false,
+  content: "test",
 };
 
 export const useWindowStore = create<WindowStoreType>()((set) => ({
   windows: [defaultWindow],
   activeWindowId: null,
 
-  createWindow: (title) => {
-    const newWindowId = nanoid();
+  createWindow: ({
+    id,
+    title,
+    position,
+    size,
+    isFocused,
+    isMaximized,
+    isMinimized,
+    content,
+  }: WindowType) => {
+    const newWindowId = id || nanoid();
     const newWindow = {
       id: newWindowId,
       title,
-      position: { x: 100, y: 100 },
-      width: 300,
-      size: { width: 300, height: 200 },
-      isFocused: false,
-      isMaximized: false,
-      isMinimized: false,
+      position,
+      size,
+      content,
+      isFocused,
+      isMaximized,
+      isMinimized,
     };
     set((state) => {
       const newWindows = [...state.windows, newWindow];
@@ -125,7 +135,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     });
   },
 
-  moveWindow: (id, x, y, relative) => {
+  moveWindow: (id, position, relative) => {
     if (relative) {
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
@@ -133,8 +143,8 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
             ? {
                 ...window,
                 position: {
-                  x: window.position.x + x,
-                  y: window.position.y + y,
+                  x: window.position.x + position.x,
+                  y: window.position.y + position.y,
                 },
               }
             : window
@@ -144,7 +154,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     } else {
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
-          window.id === id ? { ...window, position: { x, y } } : window
+          window.id === id ? { ...window, position: position } : window
         );
         return { windows: updatedWindows };
       });

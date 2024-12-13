@@ -5,6 +5,9 @@ import { createRoot } from "react-dom/client";
 import { IndexedDB } from "@zenfs/dom";
 
 import { WindowManager } from "@/components/WMDisplay";
+import TEMP__StyleEditor from "@/components/TEMP__StyleEditor";
+import { setupWindowEventHandlers } from "./functions/dispatcher";
+import { ThemeProvider } from "./stores/themestore";
 
 await configure({
   mounts: {
@@ -28,5 +31,11 @@ const setup = () => {
 };
 
 setup();
+setupWindowEventHandlers();
 
-createRoot(document.getElementById("root")!).render(<WindowManager />);
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider>
+    <TEMP__StyleEditor />
+    <WindowManager />
+  </ThemeProvider>
+);

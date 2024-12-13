@@ -1,0 +1,81 @@
+.window {
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 2px 8px hsla(var(--primary) / 0.15);
+  min-width: 200px;
+  min-height: 100px;
+  overflow: hidden;
+}
+
+.window.foc {
+  border-color: hsla(var(--primary) / 0.53);
+  box-shadow: 0 4px 16px hsla(var(--primary) / 0.2);
+}
+
+.window-titlebar {
+  background-color: hsl(var(--muted));
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid hsl(var(--border));
+  height: 24px;
+}
+
+.window-title {
+  user-select: none;
+  margin-left: 8px;
+  font-family: "Segoe UI", sans-serif;
+  color: hsl(var(--foreground));
+}
+
+.window-controls {
+  display: flex;
+}
+
+.window-button {
+  width: 36px;
+  height: 24px;
+  border-radius: 0;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.window-button:hover {
+  background-color: hsla(var(--primary) / 0.1);
+}
+
+.window-close {
+  background-color: transparent;
+}
+
+.window-close:hover {
+  background-color: hsl(var(--destructive));
+}
+
+.window-minimize {
+  background-color: transparent;
+}
+
+.window-maximize {
+  background-color: transparent;
+}
+
+.window.dragging {
+  opacity: 0.8;
+  cursor: move;
+}
+
+.window-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+}

@@ -4,7 +4,7 @@ import { Rnd } from "react-rnd";
 import React, { useCallback } from "react";
 import { motion } from "motion/react";
 import { easings } from "@/variables/easings";
-import { Maximize2Icon, Minimize2Icon } from "lucide-react";
+import { Maximize2Icon, ShrinkIcon, X } from "lucide-react";
 
 export const Window: React.FC<WindowType> = ({
   id,
@@ -14,6 +14,7 @@ export const Window: React.FC<WindowType> = ({
   isFocused,
   zIndex,
   isMaximized,
+  content,
 }) => {
   const {
     focusWindow,
@@ -31,13 +32,16 @@ export const Window: React.FC<WindowType> = ({
 
   return (
     <Rnd
+      minWidth={200}
+      minHeight={200}
+      disableDragging={isMaximized}
       style={{ zIndex: zIndex }}
-      size={{ width: size.width, height: size.height }}
+      size={{ width: size?.width ?? 200, height: size?.height ?? 200 }}
       position={position}
-      onDragStop={(e, d) => {
-        moveWindow(id, d.x, d.y, false);
+      onDragStop={(_e, d) => {
+        moveWindow(id, d, false);
       }}
-      onResizeStop={(e, direction, ref, delta, position) => {
+      onResizeStop={(_e, _direction, ref, _delta, position) => {
         const size = {
           width: parseInt(ref.style.width),
           height: parseInt(ref.style.height),
@@ -46,32 +50,47 @@ export const Window: React.FC<WindowType> = ({
         resizeWindow(id, size, position);
       }}
       onMouseDown={() => focusWindow(id)}
+      dragHandleClassName="window-titlebar"
     >
       <motion.div
-        data-id={id}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.2, ease: easings.easeOutExpo }}
         style={{
-          backgroundColor: isFocused ? "green" : "red",
           width: "100%",
           height: "100%",
         }}
-        className="shadow-xl"
+        className={`window ${isFocused ? "foc" : ""}`}
+        id={`window-${id}`}
       >
-        {title}
-        {isFocused ? "true" : "false"}
-        <button onClick={handleClose}>Close me</button>
-        {isMaximized ? (
-          <button onClick={() => restoreWindow(id)}>
-            <Minimize2Icon />
-          </button>
-        ) : (
-          <button onClick={() => maximizeWindow(id)}>
-            <Maximize2Icon />
-          </button>
-        )}
+        <div className="window-titlebar">
+          <div className="window-title">{title}</div>
+          <div className="window-controls">
+            <button
+              className="window-button window-maximize flex justify-center items-center"
+              onClick={() =>
+                !isMaximized ? maximizeWindow(id) : restoreWindow(id)
+              }
+            >
+              {!isMaximized ? (
+                <Maximize2Icon size={8} />
+              ) : (
+                <ShrinkIcon size={8} />
+              )}
+            </button>
+            <button
+              className="window-button window-close flex justify-center items-center"
+              onClick={handleClose}
+            >
+              <X size={10} />
+            </button>
+          </div>
+        </div>
+        <div
+          className="window-content"
+          dangerouslySetInnerHTML={{ __html: content || "" }}
+        />
       </motion.div>
     </Rnd>
   );

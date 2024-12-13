@@ -10,10 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-select": "^2.1.2",
+    "@radix-ui/react-slot": "^1.1.0",
     "@types/readable-stream": "^4.0.18",
     "@zenfs/core": "^1.6.6",
     "@zenfs/dom": "^1.0.7",
     "add": "^2.0.6",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "hex-to-hsl": "^1.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.468.0",
@@ -28,6 +34,8 @@
     "react-resizable": "^3.0.5",
     "react-rnd": "^10.4.13",
     "tailwind-colors": "^1.1.0",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.3",
     "values.js": "^2.1.1",
     "zustand": "^5.0.2"

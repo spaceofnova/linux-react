@@ -1,14 +1,17 @@
 {
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "Preserve",
-    "jsx": "react-jsx",
-    "esModuleInterop": true,
-    "noEmit": true,
     "baseUrl": ".",
-    "lib": ["esnext", "dom"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }
