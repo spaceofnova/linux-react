@@ -61,7 +61,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
       );
 
       // Find the focused window and move it to the end of the array
-      const focusedWindow = updatedWindows.find((window) => window.id === id);
+      const focusedWindow = updatedWindows.find((window) => window.id === id)!;
       const focusedWindowIndex = updatedWindows.indexOf(focusedWindow);
 
       // Remove the focused window from its current position and add it to the end
