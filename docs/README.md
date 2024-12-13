@@ -4,6 +4,8 @@
 
 This is a simple Linux desktop environment built with React.
 
+## Docs you can view the docs [here](https://spaceofnova.github.io/linux-react/)
+
 ## Plans
 
 - [x] Window Manager
