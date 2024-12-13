@@ -7,13 +7,15 @@ This is a simple Linux desktop environment built with React.
 ## Plans
 
 - [x] Window Manager (Kinda really basic rn)
-- [ ] Themes
-- [ ] Apps
-- [ ] File Manager
+- [x] Themes
+- [-] Apps
+- [x] File Manager
 - [ ] Settings
 - [ ] Notifications
 - [ ] Keyboard Shortcuts
-- [ ] Customization
+- [x] Customization
+- [ ] Documentation
+- [-] API
 
 ## Running Locally
 
