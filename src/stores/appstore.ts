@@ -9,7 +9,7 @@ const defualtApps: AppType[] = [
     path: "/data/apps/terminal.js",
   },
 ];
-async function loadAndRunJsFile(filePath: string): Promise<any> {
+async function loadAndRunJsFile(filePath: string): Promise<unknown> {
   try {
     // Read the file content
     const scriptContent = fs.readFileSync(filePath, "utf-8");

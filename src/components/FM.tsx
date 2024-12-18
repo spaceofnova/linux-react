@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import fs from "@zenfs/core";
 import FileEditor from "./FE";
 import { ArrowLeft, Folder, File, Trash2 } from "lucide-react";

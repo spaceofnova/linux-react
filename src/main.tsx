@@ -1,4 +1,4 @@
-import "./index.css";
+import "@/index.css";
 import { access, constants, configure, mkdirSync } from "@zenfs/core";
 
 import { createRoot } from "react-dom/client";
@@ -6,8 +6,8 @@ import { IndexedDB } from "@zenfs/dom";
 
 import { WindowManager } from "@/components/WMDisplay";
 import TEMP__StyleEditor from "@/components/TEMP__StyleEditor";
-import { setupWindowEventHandlers } from "./functions/dispatcher";
-import { ThemeProvider } from "./stores/themestore";
+import { setupWindowEventHandlers } from "@/functions/dispatcher";
+import { ThemeProvider } from "@/stores/themestore";
 
 await configure({
   mounts: {
@@ -16,7 +16,7 @@ await configure({
 });
 
 const setup = () => {
-  const dirs = ["/data/themes", "/data/apps"];
+  const dirs = ["/data/themes", "/data/apps", "/data/appdata"];
   dirs.forEach((dir) => {
     try {
       access(dir, constants.F_OK, (err) => {

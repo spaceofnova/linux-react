@@ -11,11 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { registerApps } from "@/functions/metadata";
 
 export default function TEMP__StyleEditor() {
   const { setTheme, theme } = useTheme();
   const apps = useAppStore((state) => state.apps);
   const launchApp = useAppStore((state) => state.launchApp);
+
+  useEffect(() => {
+    registerApps();
+  }, []);
 
   // Theme Management
   const getUserTheme = () => {

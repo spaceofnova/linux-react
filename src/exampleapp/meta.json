@@ -1,8 +1,0 @@
-{
-  "name": "Example App",
-  "version": "1.0.0",
-  "description": "A sample application demonstrating application structure",
-  "author": "zenox",
-  "dependencies": ["dependency1", "dependency2"],
-  "entryPoint": "init.js"
-}
