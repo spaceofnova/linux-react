@@ -1,33 +1,49 @@
-import { Size } from "re-resizable";
-import { Position } from "react-rnd";
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 export interface AppType {
+  id: string;
   name: string;
   version: string | number;
-  path: string;
+  description?: string;
+  folderPath: string;
+  windowOptions?: WindowType;
+  internal?: boolean;
 }
 
 export interface AppStoreType {
   apps: AppType[];
-  launchApp: (appname: string) => void;
+  launchApp: (appID: string) => void;
   setApps: (apps: AppType[]) => void;
   addApp: (app: AppType) => void;
+  removeApp: (appID: string) => void;
 }
 
 /* Types for the WM */
 
 export interface WindowType {
-  id: string;
+  id?: string;
   title: string;
-  position: Position;
-  isFocused: boolean;
-  isMaximized: boolean;
-  isMinimized: boolean;
+  position?: Position;
+  isFocused?: boolean;
+  isMaximized?: boolean;
+  isMinimized?: boolean;
   size?: Size | undefined;
   prevSize?: Size;
   prevPos?: Position;
   zIndex?: number;
-  content?: string | JSX.Element | Element;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ReactElement?: React.ComponentType<any>;
+  noControls?: boolean;
+  filePath?: string;
+  noResize?: boolean;
 }
 
 export interface WindowStoreType {
@@ -41,15 +57,4 @@ export interface WindowStoreType {
   restoreWindow: (id: string) => void;
   moveWindow: (id: string, position: Position, relative: boolean) => void;
   resizeWindow: (id: string, Size: Size, newpos: Position) => void;
-}
-
-export interface Colors {
-  primary: string;
-}
-
-export interface ThemeStoreType {
-  theme: string;
-  colors: Colors;
-  setTheme: (theme: string) => void;
-  setColors: (colors: Colors) => void;
 }

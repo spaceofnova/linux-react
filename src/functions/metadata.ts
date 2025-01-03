@@ -35,14 +35,18 @@ export function collectCompiledFileMetadata(directoryPath: string) {
     const files = fs.readdirSync(directoryPath);
 
     files.forEach((file) => {
-      if (file.endsWith(".js")) {
+      if (file.endsWith(".app")) {
         const fullPath = path.join(directoryPath, file);
         const metadata = extractMetadataFromCompiledJS(fullPath);
 
+        if (!metadata) return;
         if (metadata) {
-          useAppStore.getState().addApp({
-            name: metadata.name || file,
-            path: fullPath,
+          console.log("Found metadata for file:", file);
+          console.log("Metadata:", metadata);
+          useAppStore.getState().addLocalApp({
+            id: metadata.id,
+            name: metadata.name || "App",
+            folderPath: fullPath,
             version: metadata.version || "1.0",
           });
         }
@@ -54,6 +58,11 @@ export function collectCompiledFileMetadata(directoryPath: string) {
 }
 
 export function registerApps() {
-  const appsDirectory = "/data/apps";
+  const appsDirectory = "/apps";
   collectCompiledFileMetadata(appsDirectory);
+}
+
+export function getAppMetadataFromPath(path: string) {
+  const metaData = fs.readFileSync(path + "/metadata.json", "utf8");
+  return JSON.parse(metaData);
 }

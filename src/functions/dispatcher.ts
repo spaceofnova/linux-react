@@ -71,14 +71,7 @@ export function setupWindowEventHandlers() {
   dispatchReceiver.on("WINDOW_CREATE", (payload) => {
     console.log("Window Created:", payload);
     useWindowStore.getState().createWindow({
-      id: payload.id,
-      title: payload.title,
-      size: payload.size,
-      position: payload.position,
-      isMaximized: payload.isMaximized,
-      isMinimized: payload.isMinimized,
-      isFocused: true,
-      content: payload.content,
+      ...payload,
     });
   });
 

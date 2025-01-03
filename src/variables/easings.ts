@@ -27,30 +27,14 @@ export const easings: EasingsMap = {
 
 type Easing = [number, number, number, number];
 
-interface EasingsMap {
-  easeInSine: Easing;
-  easeOutSine: Easing;
-  easeInOutSine: Easing;
-  easeInQuad: Easing;
-  easeOutQuad: Easing;
-  easeInOutQuad: Easing;
-  easeInCubic: Easing;
-  easeOutCubic: Easing;
-  easeInOutCubic: Easing;
-  easeInQuart: Easing;
-  easeOutQuart: Easing;
-  easeInOutQuart: Easing;
-  easeInQuint: Easing;
-  easeOutQuint: Easing;
-  easeInOutQuint: Easing;
+type EasingName =
+  | 'easeInSine' | 'easeOutSine' | 'easeInOutSine'
+  | 'easeInQuad' | 'easeOutQuad' | 'easeInOutQuad'
+  | 'easeInCubic' | 'easeOutCubic' | 'easeInOutCubic'
+  | 'easeInQuart' | 'easeOutQuart' | 'easeInOutQuart'
+  | 'easeInQuint' | 'easeOutQuint' | 'easeInOutQuint'
+  | 'easeInExpo' | 'easeOutExpo' | 'easeInOutExpo'
+  | 'easeInCirc' | 'easeOutCirc' | 'easeInOutCirc'
+  | 'easeInBack' | 'easeOutBack' | 'easeInOutBack';
 
-  easeInExpo: Easing;
-  easeOutExpo: Easing;
-  easeInOutExpo: Easing;
-  easeInCirc: Easing;
-  easeOutCirc: Easing;
-  easeInOutCirc: Easing;
-  easeInBack: Easing;
-  easeOutBack: Easing;
-  easeInOutBack: Easing;
-}
+type EasingsMap = Record<EasingName, Easing>;

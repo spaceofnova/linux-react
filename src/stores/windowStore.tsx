@@ -1,51 +1,30 @@
 import { create } from "zustand";
 import { WindowStoreType, WindowType } from "@/types/storeTypes";
-import { customAlphabet } from "nanoid";
-const alphabet =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-const nanoid = customAlphabet(alphabet, 12);
-
-const defaultWindow: WindowType = {
-  id: nanoid(),
-  title: "File Manager",
-  position: { x: 100, y: 100 },
-  size: { width: 300, height: 200 },
-  isFocused: false,
-  isMaximized: false,
-  isMinimized: false,
-  content: "test",
-};
+import { toast } from "sonner";
 
 export const useWindowStore = create<WindowStoreType>()((set) => ({
-  windows: [defaultWindow],
+  windows: [],
   activeWindowId: null,
 
-  createWindow: ({
-    id,
-    title,
-    position,
-    size,
-    isFocused,
-    isMaximized,
-    isMinimized,
-    content,
-  }: WindowType) => {
-    const newWindowId = id || nanoid();
+  createWindow: ({ ...window }: WindowType) => {
+    if (!window.id) {
+      toast.error("Failed to launch window, no ID provided");
+      return;
+    }
+    if (useWindowStore.getState().windows.find((w) => w.id === window.id)) {
+      useWindowStore.getState().focusWindow(window.id);
+      return;
+    }
     const newWindow = {
-      id: newWindowId,
-      title,
-      position,
-      size,
-      content,
-      isFocused,
-      isMaximized,
-      isMinimized,
+      ...window,
+      position: window.position || { x: 100, y: 100 },
+      size: window.size || { width: 400, height: 300 },
     };
     set((state) => {
       const newWindows = [...state.windows, newWindow];
       return {
         windows: newWindows,
-        activeWindowId: newWindowId,
+        activeWindowId: window.id,
       };
     });
   },
@@ -96,7 +75,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
               isMaximized: true,
               position: { x: 0, y: 0 },
               prevSize: win.size,
-              prevPos: win.position,
+              prevPos: win.position || { x: 0, y: 0 },
               size: {
                 width: window.innerWidth,
                 height: window.innerHeight,
@@ -112,7 +91,11 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     set((state) => {
       const updatedWindows = state.windows.map((window) =>
         window.id === id
-          ? { ...window, isMinimized: true, position: window.prevPos }
+          ? {
+              ...window,
+              isMinimized: true,
+              position: window.prevPos || { x: 0, y: 0 },
+            }
           : window
       );
       return { windows: updatedWindows };
@@ -127,7 +110,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
               ...window,
               isMaximized: false,
               size: window.prevSize,
-              position: window.prevPos,
+              position: window.prevPos || { x: 0, y: 0 },
             }
           : window),
       }));
@@ -143,8 +126,8 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
             ? {
                 ...window,
                 position: {
-                  x: window.position.x + position.x,
-                  y: window.position.y + position.y,
+                  x: window.position?.x || 0 + position.x,
+                  y: window.position?.y || 0 + position.y,
                 },
               }
             : window
