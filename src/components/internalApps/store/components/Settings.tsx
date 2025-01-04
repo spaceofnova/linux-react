@@ -14,13 +14,13 @@ export default function Settings() {
     launchApp(input);
   };
 
-  const fetchTest = async () => {
-    const response = await fetch(
-      "http://localhost:5173/apps/api.test/assets/index-_xqS-YfD.js"
-    );
-    const data = await response.text();
-    console.log(data);
-  };
+  // const fetchTest = async () => {
+  //   const response = await fetch(
+  //     "/files/apps/api.test/assets/index-_xqS-YfD.js"
+  //   );
+  //   const data = await response.text();
+  //   console.log(data);
+  // };
   return (
     <div>
       <Button onClick={() => navigate("/")}>Back</Button>
@@ -29,7 +29,7 @@ export default function Settings() {
       <p>DEBUG AHEAD!!!</p>
       <div className="flex gap-4 w-full">
         <Input value={input} onChange={(e) => setInput(e.target.value)} />
-        <Button onClick={fetchTest}>Launch</Button>
+        <Button onClick={handleClick}>Launch</Button>
       </div>
     </div>
   );

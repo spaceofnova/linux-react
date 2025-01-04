@@ -3,7 +3,7 @@ import { usePrefrencesStore } from "@/stores/prefrencesStore";
 import { useWindowStore } from "@/stores/windowStore";
 import fs from "@zenfs/core";
 import { AnimatePresence } from "motion/react";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 export const WindowManager = () => {
@@ -13,6 +13,7 @@ export const WindowManager = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prefrences = usePrefrencesStore((state) => state.prefrences);
   const updatePrefrence = usePrefrencesStore((state) => state.updatePrefrence);
+  const [wallpaperReady, setWallpaperReady] = useState(false);
 
   const drawImageCover = useCallback(
     (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
@@ -83,6 +84,7 @@ export const WindowManager = () => {
         img.onload = () => {
           drawImageCover(img, ctx);
           URL.revokeObjectURL(url);
+          setWallpaperReady(true);
         };
 
         const handleResize = () => {
@@ -96,11 +98,18 @@ export const WindowManager = () => {
         console.error("Error loading wallpaper:", error);
       }
     }
-  }, [prefrences.userWallpaper, drawImageCover]);
+  }, [prefrences.userWallpaper, drawImageCover, wallpaperReady]);
 
   return (
     <div ref={containerRef} className="h-full w-full fixed z-0">
-      <canvas ref={canvasRef} className="h-full w-full fixed z-0" />
+      <canvas
+        ref={canvasRef}
+        className="h-full w-full fixed z-0 transition-all duration-500"
+        style={{
+          filter: wallpaperReady ? "blur(0px)" : "blur(100px)",
+          opacity: wallpaperReady ? 1 : 0,
+        }}
+      />
       {prefrences.debugMode && (
         <div className="fixed top-0 left-0 z-0">
           <p>Debug Mode Enabled!</p>

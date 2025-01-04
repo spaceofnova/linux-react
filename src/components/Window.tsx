@@ -124,11 +124,13 @@ export const Window: React.FC<WindowType> = ({
       minHeight={200}
       disableDragging={isMaximized}
       onDragStart={() => setIsDragging(true)}
-      onDragEnd={() => setIsDragging(false)}
       style={{ zIndex }}
       size={{ width: size?.width ?? 200, height: size?.height ?? 200 }}
       position={position}
-      onDragStop={(_e, d) => moveWindow(id, d, false)}
+      onDragStop={(_e, d) => {
+        moveWindow(id, d, false);
+        setIsDragging(false);
+      }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
         resizeWindow(
           id,

@@ -19,32 +19,31 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
       ...window,
       position: window.position || { x: 100, y: 100 },
       size: window.size || { width: 400, height: 300 },
+      zIndex: useWindowStore.getState().windows.length,
     };
-    set((state) => {
-      const newWindows = [...state.windows, newWindow];
-      return {
-        windows: newWindows,
-        activeWindowId: window.id,
-      };
-    });
+    set((state) => ({
+      windows: [...state.windows, newWindow],
+      activeWindowId: window.id,
+    }));
   },
 
   focusWindow: (id) => {
     set((state) => {
-      // First, update focus states for all windows
-      const updatedWindows = state.windows.map(
-        (window) =>
-          window.id === id
-            ? { ...window, isFocused: true } // Focus this window
-            : { ...window, isFocused: false } // Unfocus others
+      if (!id) {
+        return { activeWindowId: null };
+      }
+
+      // Find the window to focus
+      const windowToFocus = state.windows.find((window) => window.id === id);
+      if (!windowToFocus) return state;
+
+      // Get the highest z-index
+      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex || 0));
+
+      // Update only the z-index of the focused window
+      const updatedWindows = state.windows.map((window) =>
+        window.id === id ? { ...window, zIndex: maxZIndex + 1 } : window
       );
-
-      // Find the focused window and move it to the end of the array
-      const focusedWindow = updatedWindows.find((window) => window.id === id)!;
-      const focusedWindowIndex = updatedWindows.indexOf(focusedWindow);
-
-      // Remove the focused window from its current position and add it to the end
-      updatedWindows.push(...updatedWindows.splice(focusedWindowIndex, 1));
 
       return {
         windows: updatedWindows,
@@ -57,7 +56,9 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     set((state) => {
       const newWindows = state.windows.filter((window) => window.id !== id);
       const isAnyWindowLeft = newWindows.length > 0;
-      const activeWindowId = isAnyWindowLeft ? newWindows[0].id : null; // Set the first window as active if any
+      const activeWindowId = isAnyWindowLeft
+        ? newWindows[newWindows.length - 1].id
+        : null;
 
       return {
         windows: newWindows,
@@ -119,6 +120,12 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
   },
 
   moveWindow: (id, position, relative) => {
+    // Minimum Y position to ensure window stays below browser chrome
+    const MIN_Y_POSITION = 0; // Typically browser chrome is around 32px height
+    const MAX_Y_POSITION = window.innerHeight - 64;
+    const MAX_X_POSITION = window.innerWidth - 64;
+    const MIN_X_POSITION = 0;
+
     if (relative) {
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
@@ -126,8 +133,20 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
             ? {
                 ...window,
                 position: {
-                  x: window.position?.x || 0 + position.x,
-                  y: window.position?.y || 0 + position.y,
+                  x: Math.max(
+                    MIN_X_POSITION,
+                    Math.min(
+                      MAX_X_POSITION,
+                      window.position?.x || 0 + position.x
+                    )
+                  ),
+                  y: Math.max(
+                    MIN_Y_POSITION,
+                    Math.min(
+                      MAX_Y_POSITION,
+                      (window.position?.y || 0) + position.y
+                    )
+                  ),
                 },
               }
             : window
@@ -137,7 +156,21 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     } else {
       set((state) => {
         const updatedWindows = state.windows.map((window) =>
-          window.id === id ? { ...window, position: position } : window
+          window.id === id
+            ? {
+                ...window,
+                position: {
+                  x: Math.max(
+                    MIN_X_POSITION,
+                    Math.min(MAX_X_POSITION, position.x)
+                  ),
+                  y: Math.max(
+                    MIN_Y_POSITION,
+                    Math.min(MAX_Y_POSITION, position.y)
+                  ),
+                },
+              }
+            : window
         );
         return { windows: updatedWindows };
       });

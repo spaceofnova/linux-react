@@ -2,18 +2,16 @@ import { Button } from "@/components/ui/button";
 import fs from "@zenfs/core";
 import { Loader2, LucideCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createBrowserRouter, RouterProvider, useNavigate } from "react-router";
 //@ts-expect-error This resolves to a file just fine.
 const defualtWallpaper = await import("../assets/images/wallpaper.jpg");
 
-const Page1 = () => {
+const Page1 = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const startLoading = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate("/install");
+      onNavigate("/install");
     }, 987);
   };
 
@@ -58,8 +56,11 @@ const Page1 = () => {
   );
 };
 
-const MainInstall = () => {
-  const navigate = useNavigate();
+const MainInstall = ({
+  onNavigate,
+}: {
+  onNavigate: (path: string) => void;
+}) => {
   const [progress, setProgress] = useState([
     {
       id: 0,
@@ -137,7 +138,7 @@ const MainInstall = () => {
     updateStep(3, true, false);
     await wait(200);
     localStorage.setItem("setuplock", "true");
-    navigate("/finish");
+    onNavigate("/finish");
   };
 
   useEffect(() => {
@@ -182,26 +183,26 @@ const Finish = () => {
   );
 };
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Page1 />,
-  },
-  {
-    path: "/install",
-    element: <MainInstall />,
-  },
-  {
-    path: "/finish",
-    element: <Finish />,
-  },
-]);
-
 const Setup = () => {
+  const [currentPath, setCurrentPath] = useState("/");
+
+  const renderRoute = () => {
+    switch (currentPath) {
+      case "/":
+        return <Page1 onNavigate={setCurrentPath} />;
+      case "/install":
+        return <MainInstall onNavigate={setCurrentPath} />;
+      case "/finish":
+        return <Finish />;
+      default:
+        return <Page1 onNavigate={setCurrentPath} />;
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-12">
       <h1 className="text-2xl font-bold">Linux React Installer</h1>
-      <RouterProvider router={router} />
+      {renderRoute()}
     </div>
   );
 };

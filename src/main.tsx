@@ -1,5 +1,5 @@
 import "@/index.css";
-import fs, { configure } from "@zenfs/core";
+import { configure } from "@zenfs/core";
 import { createRoot } from "react-dom/client";
 import { IndexedDB } from "@zenfs/dom";
 
@@ -50,22 +50,8 @@ const functions = () => {
 
 functions();
 
-const ShowFileData = () => {
-  let file;
-  const filePath = window.location.pathname;
-  if (filePath) {
-    file = fs.readFileSync(filePath, "utf-8");
-    console.log(file);
-    return <div>{file}</div>;
-  }
-};
-
-const App = () => {
-  if (window.location.pathname !== "/") {
-    return <ShowFileData />;
-  }
-
-  return (
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider>
     <div>
       {setupLock === null ? (
         <Setup />
@@ -77,11 +63,5 @@ const App = () => {
         </>
       )}
     </div>
-  );
-};
-
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider>
-    <App />
   </ThemeProvider>
 );
