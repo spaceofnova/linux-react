@@ -4,22 +4,22 @@
 
 This is a simple Linux desktop environment built with React.
 
-## You can view the docs [here](https://spaceofnova.github.io/linux-react/)
+## DO NOT USE THE API YET! IT WILL NOT WORK!
 
 ## Plans
 
 - [x] Window Manager
-- [x] Themes
-- [x] Apps\*
-- [x] File Manager\*
+- [x] Apps
+- [x] File Manager
 - [ ] Settings
 - [ ] Notifications
 - [ ] Keyboard Shortcuts
-- [x] Customization\*
+- [x] Customization
 - [ ] Documentation
-- [x] API\*
+- [x] API\*\*
 
 | \*Not Finished
+| \*\* Api is going through a rework
 
 ## Running Locally
 

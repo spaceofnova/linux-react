@@ -24,6 +24,7 @@ type AppStoreActions = {
   removeLocalApp: (appID: string) => AppType[];
   launchApp: (appID: string) => Promise<void>;
   getApps: () => AppType[];
+  launchDeepLink: (deepLink: string) => Promise<void>;
 };
 
 export const useAppStore = create<AppStoreState & AppStoreActions>()(
@@ -53,6 +54,50 @@ export const useAppStore = create<AppStoreState & AppStoreActions>()(
         });
         set({ localApps: newApps });
         return newApps;
+      },
+      launchDeepLink: async (deepLink): Promise<void> => {
+        const app = get()
+          .getApps()
+          .find((app) => app.deepLink === deepLink.split(":")[0]);
+        if (!app) {
+          toast.error(`App ${deepLink} not found`, {
+            dismissible: true,
+            action: {
+              label: "Close",
+              onClick: () => toast.dismiss(),
+            },
+          });
+          return;
+        }
+        const windowOptions = app.windowOptions || {
+          title: app.name,
+          id: app.id,
+          position: { x: 100, y: 100 },
+          size: { width: 600, height: 450 },
+          filePath: "index.html",
+        };
+
+        const window = useWindowStore
+          .getState()
+          .windows.find((window) => window.id === app.id);
+
+        if (window && window.id) {
+          useWindowStore.getState().updateWindow(window.id, {
+            deepLink: deepLink.split(":")[1],
+          });
+          useWindowStore.getState().focusWindow(window.id);
+          return;
+        }
+
+        try {
+          useWindowStore.getState().createWindow({
+            id: app.id,
+            deepLink: deepLink.split(":")[1],
+            ...windowOptions,
+          });
+        } catch (error) {
+          console.error(`Failed to launch ${app.name}:`, error);
+        }
       },
 
       launchApp: async (appID) => {

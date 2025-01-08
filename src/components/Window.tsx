@@ -3,7 +3,7 @@ import { WindowType } from "@/types/storeTypes";
 import { Rnd } from "react-rnd";
 import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { easings } from "@/variables/easings";
+import { easings } from "@/lib/easings";
 import { Maximize2Icon, ShrinkIcon, X } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export const Window: React.FC<WindowType> = ({
   filePath,
   noResize,
   ReactElement,
+  deepLink,
 }) => {
   // State
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -102,7 +103,7 @@ export const Window: React.FC<WindowType> = ({
       } overflow-scroll`}
     >
       {ReactElement ? (
-        <ReactElement id={id} />
+        <ReactElement id={id} deepLink={deepLink} />
       ) : iframeDoc ? (
         <iframe
           srcDoc={iframeDoc}

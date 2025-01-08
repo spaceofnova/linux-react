@@ -13,9 +13,11 @@ export interface AppType {
   name: string;
   version: string | number;
   description?: string;
-  folderPath: string;
+  folderPath?: string;
   windowOptions?: WindowType;
   internal?: boolean;
+  icon?: string;
+  deepLink?: string;
 }
 
 export interface AppStoreType {
@@ -44,6 +46,8 @@ export interface WindowType {
   noControls?: boolean;
   filePath?: string;
   noResize?: boolean;
+  icon?: string;
+  deepLink?: string;
 }
 
 export interface WindowStoreType {
@@ -57,4 +61,5 @@ export interface WindowStoreType {
   restoreWindow: (id: string) => void;
   moveWindow: (id: string, position: Position, relative: boolean) => void;
   resizeWindow: (id: string, Size: Size, newpos: Position) => void;
+  updateWindow: (id: string, updates: Partial<WindowType>) => void;
 }

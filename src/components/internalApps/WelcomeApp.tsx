@@ -23,9 +23,9 @@ const WelcomeApp = () => {
         <div className="flex items-center gap-2">
           <Checkbox
             id="startup1"
-            checked={prefrences.showWelcomeApp}
+            checked={prefrences.hidden?.showWelcomeApp || false}
             onCheckedChange={(checked: boolean) =>
-              updatePrefrence("showWelcomeApp", checked)
+              updatePrefrence("hidden.showWelcomeApp", checked)
             }
           />
           <label
@@ -38,13 +38,16 @@ const WelcomeApp = () => {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => closeWindow("com.app.welcome")}
+          onClick={() => closeWindow("com.system.welcome")}
         >
           Close
         </Button>
         <Button
           className="w-full"
-          onClick={() => launchApp("com.system.store")}
+          onClick={() => {
+            launchApp("com.system.store");
+            closeWindow("com.system.welcome");
+          }}
         >
           Open App Store
         </Button>

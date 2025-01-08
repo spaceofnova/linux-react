@@ -1,7 +1,7 @@
 {
   "name": "linux-react",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
     "@radix-ui/react-progress": "^1.1.1",
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.1.2",
     "@tanstack/react-query": "^5.62.11",
     "@trpc/client": "^11.0.0-rc.682",
     "@trpc/server": "^11.0.0-rc.682",

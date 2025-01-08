@@ -15,11 +15,15 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
       useWindowStore.getState().focusWindow(window.id);
       return;
     }
+    const maxZIndex = Math.max(
+      ...useWindowStore.getState().windows.map((w) => w.zIndex || 0),
+      -1
+    );
     const newWindow = {
       ...window,
       position: window.position || { x: 100, y: 100 },
       size: window.size || { width: 400, height: 300 },
-      zIndex: useWindowStore.getState().windows.length,
+      zIndex: maxZIndex + 1,
     };
     set((state) => ({
       windows: [...state.windows, newWindow],
@@ -31,6 +35,11 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
     set((state) => {
       if (!id) {
         return { activeWindowId: null };
+      }
+
+      // If window is already focused, don't update zIndex
+      if (state.activeWindowId === id) {
+        return state;
       }
 
       // Find the window to focus
@@ -183,6 +192,14 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
         window.id === id
           ? { ...window, size, position: { x: newpos.x, y: newpos.y } }
           : window
+      );
+      return { windows: updatedWindows };
+    });
+  },
+  updateWindow: (id, updates) => {
+    set((state) => {
+      const updatedWindows = state.windows.map((window) =>
+        window.id === id ? { ...window, ...updates } : window
       );
       return { windows: updatedWindows };
     });

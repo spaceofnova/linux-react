@@ -67,17 +67,6 @@
     @apply antialiased bg-background text-foreground;
   }
 }
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: hsla(var(--primary) / 0.1);
+body {
+  user-select: none;
 }
