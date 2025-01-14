@@ -3,6 +3,7 @@ import { FilesApp } from "./files";
 import { AppStore } from "./store";
 import SettingsApp from "./settings";
 import WelcomeApp from "./WelcomeApp";
+import TerminalApp from "./terminal";
 
 export const internalApps: AppType[] = [
   {
@@ -58,5 +59,18 @@ export const internalApps: AppType[] = [
       noControls: true,
     },
     icon: "/root/assets/welcome.png",
+  },
+  {
+    id: "com.system.terminal",
+    deepLink: "term",
+    name: "Terminal",
+    version: "1.0",
+    internal: true,
+    windowOptions: {
+      title: "Terminal",
+      ReactElement: TerminalApp,
+      noControls: true,
+    },
+    icon: "/root/assets/terminal.png",
   },
 ];

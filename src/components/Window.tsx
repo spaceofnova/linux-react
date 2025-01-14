@@ -11,19 +11,11 @@ import { useAppStore } from "@/stores/appstore";
 import fs from "@zenfs/core";
 
 export const Window: React.FC<WindowType> = ({
-  id,
-  title,
-  position,
-  size,
-  isFocused,
-  zIndex,
-  isMaximized,
-  noControls,
-  filePath,
-  noResize,
-  ReactElement,
-  deepLink,
+  ...windowProps
 }) => {
+  // Early return if no id
+  if (!windowProps.id) return null;
+
   // State
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [iframeDoc, setIframeDoc] = useState<string | null>(null);
@@ -41,42 +33,39 @@ export const Window: React.FC<WindowType> = ({
 
   // Handlers
   const handleClose = useCallback(() => {
-    if (!id) return;
-    closeWindow(id);
+    closeWindow(windowProps.id!);
     focusWindow(null);
-  }, [id, closeWindow, focusWindow]);
+  }, [windowProps.id, closeWindow, focusWindow]);
 
   // Effects
   useEffect(() => {
-    if (id && filePath && !ReactElement) {
+    if (windowProps.filePath && !windowProps.ReactElement) {
       try {
-        const folderPath = apps.find((app) => app.id === id)?.folderPath;
-        const html = fs.readFileSync(`${folderPath}/${filePath}`, "utf-8");
+        const folderPath = apps.find((app) => app.id === windowProps.id)?.folderPath;
+        const html = fs.readFileSync(`${folderPath}/${windowProps.filePath}`, "utf-8");
         setIframeDoc(html);
       } catch (e) {
         console.error(`Failed to read file: ${e}`);
       }
     }
-  }, [id, filePath, ReactElement, apps]);
-
-  if (!id) return null;
+  }, [windowProps.id, windowProps.filePath, windowProps.ReactElement, apps]);
 
   // Render helpers
   const renderControls = () => (
     <div className="h-8 w-full px-2 inline-flex justify-between items-center border-b titlebar">
-      <p>{title}</p>
+      <p>{windowProps.title}</p>
       <div className="inline-flex items-center gap-2">
-        {!noResize && (
+        {!windowProps.noResize && (
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            title={isMaximized ? "Restore" : "Maximize"}
+            title={windowProps.isMaximized ? "Restore" : "Maximize"}
             onClick={() =>
-              !isMaximized ? maximizeWindow(id) : restoreWindow(id)
+              !windowProps.isMaximized ? maximizeWindow(windowProps.id!) : restoreWindow(windowProps.id!)
             }
           >
-            {!isMaximized ? (
+            {!windowProps.isMaximized ? (
               <Maximize2Icon size={6} />
             ) : (
               <ShrinkIcon size={6} />
@@ -99,11 +88,11 @@ export const Window: React.FC<WindowType> = ({
   const renderContent = () => (
     <div
       className={`w-full ${
-        noControls ? "h-full" : "h-[calc(100%-2rem)]"
+        windowProps.noControls ? "h-full" : "h-[calc(100%-2rem)]"
       } overflow-scroll`}
     >
-      {ReactElement ? (
-        <ReactElement id={id} deepLink={deepLink} />
+      {windowProps.ReactElement ? (
+        <windowProps.ReactElement windowProps={{ ...windowProps }} />
       ) : iframeDoc ? (
         <iframe
           srcDoc={iframeDoc}
@@ -123,18 +112,18 @@ export const Window: React.FC<WindowType> = ({
     <Rnd
       minWidth={200}
       minHeight={200}
-      disableDragging={isMaximized}
+      disableDragging={windowProps.isMaximized}
       onDragStart={() => setIsDragging(true)}
-      style={{ zIndex }}
-      size={{ width: size?.width ?? 200, height: size?.height ?? 200 }}
-      position={position}
+      style={{ zIndex: windowProps.zIndex }}
+      size={{ width: windowProps.size?.width ?? 200, height: windowProps.size?.height ?? 200 }}
+      position={windowProps.position}
       onDragStop={(_e, d) => {
-        moveWindow(id, d, false);
+        moveWindow(windowProps.id!, d, false);
         setIsDragging(false);
       }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
         resizeWindow(
-          id,
+          windowProps.id!,
           {
             width: parseInt(ref.style.width),
             height: parseInt(ref.style.height),
@@ -142,22 +131,26 @@ export const Window: React.FC<WindowType> = ({
           position
         );
       }}
-      enableResizing={!noResize}
-      onMouseDown={() => focusWindow(id)}
-      dragHandleClassName={noControls ? "drag" : "titlebar"}
+      enableResizing={!windowProps.noResize}
+      onMouseDown={() => focusWindow(windowProps.id!)}
+      dragHandleClassName={"titlebar"}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.2, ease: easings.easeOutExpo }}
-        style={{ width: "100%", height: "100%" }}
-        className={`bg-background border ${isMaximized ? "" : "rounded-sm"} ${
-          isFocused ? "border-primary" : ""
-        }`}
-        id={`window-${id}`}
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "hsl(var(--background))",
+          border: "1px solid",
+          borderRadius: windowProps.isMaximized ? "0" : "2px",
+          borderColor: windowProps.isFocused ? "hsl(var(--primary))" : "inherit"
+        }}
+        data-window-id={windowProps.id}
       >
-        {!noControls && renderControls()}
+        {!windowProps.noControls && renderControls()}
         <ErrorBoundary errorMessage="An error occurred while rendering the window.">
           {renderContent()}
         </ErrorBoundary>

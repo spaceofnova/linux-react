@@ -43,6 +43,7 @@ export interface WindowType {
   zIndex?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ReactElement?: React.ComponentType<any>;
+  customHeader?: React.ComponentType<any>;
   noControls?: boolean;
   filePath?: string;
   noResize?: boolean;
