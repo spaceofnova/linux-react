@@ -1,15 +1,14 @@
-import { Input } from "@/components/ui/input";
-import { RefreshCwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { massDownload } from "@/functions/unix";
+import { useDownload } from "@/functions/unix";
 
 const App = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState<string>("");
   const queryClient = useQueryClient();
+  const { status, error, startDownload } = useDownload();
 
   useEffect(() => {
     if (search.length > 0) {
@@ -19,14 +18,6 @@ const App = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
-
-  const downloadSystemIcons = async () => {
-    try {
-      await massDownload("https://raw.githubusercontent.com/spaceofnova/linux-react-data-store/main/root/assets/download.json?token=$(date%20+%s)");
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div className={"flex flex-col w-full h-full p-4"}>
@@ -52,9 +43,12 @@ const App = () => {
       <div className={"flex flex-col gap-2 w-full h-full"}>
         <Outlet />
       </div> */}
-      <Button onClick={downloadSystemIcons}>
+      <Button disabled={status === "inProgress"} onClick={() => startDownload("https://raw.githubusercontent.com/spaceofnova/linux-react-data-store/main/download.json?token=$(date%20+%s)")}>
         Download System Icons
       </Button>
+      {status === "inProgress" && <p>Downloading...</p>}
+      {status === "finished" && <p>Downloaded!</p>}
+      {error && <p>Error: {error}</p>}
     </div>
   );
 };

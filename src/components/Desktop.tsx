@@ -4,17 +4,14 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Link } from "@/components/ui/link";
 import { usePrefrencesStore } from "@/stores/prefrencesStore";
-import { useWindowStore } from "@/stores/windowStore";
-import { Button } from "@/components/ui/button";
+import Dock from "./MagicDock";
 
 import fs from "@zenfs/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/stores/appstore";
 
 export const Desktop = () => {
-  const focusWindow = useWindowStore((state) => state.focusWindow);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prefrences = usePrefrencesStore((state) => state.prefrences);
@@ -50,17 +47,6 @@ export const Desktop = () => {
     },
     []
   );
-
-  useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      if (containerRef.current?.contains(e.target as Node) === false) {
-        focusWindow(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [focusWindow]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -154,6 +140,7 @@ export const Desktop = () => {
     };
   }, [select]);
   return (
+    <>
     <ContextMenu>
       <ContextMenuTrigger>
         <div ref={containerRef} className="h-full w-full fixed bg-red-500">
@@ -173,5 +160,7 @@ export const Desktop = () => {
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+    <Dock />
+    </>
   );
 };

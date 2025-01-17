@@ -1,87 +1,71 @@
 import { create } from "zustand";
 
+export interface TerminalLine {
+  text: string;
+  color?: string;
+}
+
 export interface ProgramContext {
-  shouldStop: boolean;
-  log: (message: string) => void;
+  log: (text: string, color?: string) => void;
   clear: () => void;
   writeScreen: (lines: string[]) => void;
-  getTerminalSize: () => { cols: number; rows: number };
+  shouldStop: boolean;
 }
 
-interface TerminalStore {
-  programRunning: boolean;
-  lines: string[];
-  commandHistory: string[];
-  historyIndex: number;
+interface TerminalState {
+  lines: TerminalLine[];
   currentInput: string;
   cursorPosition: number;
-  dimensions: { cols: number; rows: number };
+  programRunning: boolean;
+  programContext: ProgramContext | null;
+  commandHistory: string[];
+  historyIndex: number;
   autoScrollEnabled: boolean;
   debugLoggingEnabled: boolean;
-  addLine: (line: string) => void;
-  updateLastLine: (line: string) => void;
-  setProgramRunning: (running: boolean) => void;
-  programContext: ProgramContext | null;
-  createProgramContext: () => ProgramContext;
-  addToHistory: (command: string) => void;
-  moveHistory: (direction: "up" | "down") => string;
+  dimensions: { cols: number; rows: number };
+  addLine: (text: string, color?: string) => void;
   setInput: (input: string) => void;
   setCursor: (position: number) => void;
-  setDimensions: (dimensions: { cols: number; rows: number }) => void;
+  setProgramRunning: (running: boolean) => void;
+  addToHistory: (command: string) => void;
+  moveHistory: (direction: "up" | "down") => string;
   setAutoScroll: (enabled: boolean) => void;
   setDebugLogging: (enabled: boolean) => void;
+  setDimensions: (dimensions: { cols: number; rows: number }) => void;
   log: (message: string, ...args: any[]) => void;
+  createProgramContext: () => ProgramContext;
 }
 
-export const useTerminalStore = create<TerminalStore>((set, get) => ({
-  programRunning: false,
+export const useTerminalStore = create<TerminalState>((set, get) => ({
   lines: [],
-  commandHistory: [],
-  historyIndex: -1,
   currentInput: "",
   cursorPosition: 0,
-  dimensions: { cols: 80, rows: 24 }, // Default terminal size
+  programRunning: false,
+  programContext: null,
+  commandHistory: [],
+  historyIndex: -1,
   autoScrollEnabled: true,
   debugLoggingEnabled: false,
-  programContext: null,
-  addLine: (line) => set((state) => ({ lines: [...state.lines, line] })),
-  updateLastLine: (line) =>
-    set((state) => {
-      const newLines = [...state.lines];
-      if (newLines.length > 0) {
-        newLines[newLines.length - 1] = line;
-      } else {
-        newLines.push(line);
-      }
-      return { lines: newLines };
-    }),
-  setProgramRunning: (running) => {
-    set((state) => {
-      if (!running && state.programContext) {
-        state.programContext.shouldStop = true;
-      }
-      return { programRunning: running };
-    });
-  },
-  createProgramContext: () => {
-    const context: ProgramContext = {
-      shouldStop: false,
-      log: (message: string) => get().addLine(message),
-      clear: () => set({ lines: [] }),
-      writeScreen: (lines: string[]) => set({ lines }),
-      getTerminalSize: () => get().dimensions,
-    };
-    set({ programContext: context, programRunning: true });
-    return context;
-  },
-  addToHistory: (command) =>
+  dimensions: { cols: 0, rows: 0 },
+
+  addLine: (text: string, color?: string) =>
+    set((state) => ({
+      lines: [...state.lines, { text, color }],
+    })),
+
+  setInput: (input: string) => set({ currentInput: input }),
+  setCursor: (position: number) => set({ cursorPosition: position }),
+  setProgramRunning: (running: boolean) => set({ programRunning: running }),
+
+  addToHistory: (command: string) =>
     set((state) => ({
       commandHistory: [...state.commandHistory, command],
       historyIndex: state.commandHistory.length,
     })),
-  moveHistory: (direction) => {
+
+  moveHistory: (direction: "up" | "down") => {
     const state = get();
-    if (state.commandHistory.length === 0) return "";
+    if (state.commandHistory.length === 0) return state.currentInput;
 
     let newIndex = state.historyIndex;
     if (direction === "up") {
@@ -91,18 +75,42 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     }
 
     set({ historyIndex: newIndex });
-    return newIndex < state.commandHistory.length
-      ? state.commandHistory[newIndex]
-      : "";
+    return newIndex === state.commandHistory.length
+      ? ""
+      : state.commandHistory[newIndex];
   },
-  setInput: (input) => set({ currentInput: input }),
-  setCursor: (position) => set({ cursorPosition: position }),
+
+  setAutoScroll: (enabled: boolean) => set({ autoScrollEnabled: enabled }),
+  setDebugLogging: (enabled: boolean) => set({ debugLoggingEnabled: enabled }),
   setDimensions: (dimensions) => set({ dimensions }),
-  setAutoScroll: (enabled) => set({ autoScrollEnabled: enabled }),
-  setDebugLogging: (enabled) => set({ debugLoggingEnabled: enabled }),
+
   log: (message: string, ...args: any[]) => {
-    if (get().debugLoggingEnabled) {
-      console.log(`[${new Date().toISOString()}] ${message}`, ...args);
+    const state = get();
+    if (state.debugLoggingEnabled) {
+      console.log(message, ...args);
     }
+  },
+
+  createProgramContext: () => {
+    const state = get();
+    let shouldStop = false;
+
+    const context: ProgramContext = {
+      log: (text: string, color?: string) => {
+        get().addLine(text, color);
+      },
+      clear: () => {
+        set({ lines: [] });
+      },
+      writeScreen: (lines: string[]) => {
+        set({ lines: lines.map(text => ({ text })) });
+      },
+      get shouldStop() {
+        return shouldStop;
+      },
+    };
+
+    set({ programContext: context, programRunning: true });
+    return context;
   },
 })); 

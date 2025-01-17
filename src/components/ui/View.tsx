@@ -22,7 +22,7 @@ const View = forwardRef<HTMLDivElement, ViewProps>(
           backdropFilter: prefrences.appearance.blurEffects
             ? "blur(24px)"
             : "none",
-          borderRadius: rounded ? "calc(var(--radius) + 0.5rem)" : "0",
+          borderRadius: rounded ? "calc(var(--radius) + 0.2rem)" : "0",
         }}
       />
     );

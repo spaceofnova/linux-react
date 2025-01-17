@@ -18,7 +18,6 @@ import {
   LucideFileImage,
   Edit,
   Trash2,
-  Download,
 } from "lucide-react";
 import { FileEditor } from "./FileEditor";
 import { useWindowStore } from "@/stores/windowStore";
@@ -51,7 +50,6 @@ interface FileListItemProps {
   onDelete: (name: string) => void;
   onDoubleClick: (file: FileInfo) => void;
   setRenamingFile: (name: string | null) => void;
-  currentDirectory: string;
 }
 
 const FileListItem = ({
@@ -63,97 +61,64 @@ const FileListItem = ({
   onDelete,
   onDoubleClick,
   setRenamingFile,
-  currentDirectory,
-}: FileListItemProps) => {
-  const handleDownload = useCallback(async () => {
-    try {
-      const fullPath = normalizePath(`${currentDirectory}/${file.name}`);
-      const content = fs.readFileSync(fullPath);
-      
-      // Create a blob from the file content
-      const blob = new Blob([content], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create a temporary link and trigger download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Cleanup
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error downloading file:", error);
-    }
-  }, [file.name, currentDirectory]);
-
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div
-          className="flex items-center justify-between p-1 px-2 hover:bg-accent transition-all duration-100 cursor-pointer"
-          onDoubleClick={() => onDoubleClick(file)}
-        >
-          <div className="flex items-center gap-2 flex-1">
-            {file.isDirectory ? (
-              <LucideFolder className="min-h-4 min-w-4 w-4 h-4" />
-            ) : (
-              iconMap[file.name.split(".").pop() as keyof typeof iconMap] || (
-                <LucideFile className="min-h-4 min-w-4 w-4 h-4" />
-              )
-            )}
-            {renamingFile === file.name ? (
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    onRename(file.name, newName);
-                  } else if (e.key === "Escape") {
-                    setRenamingFile(null);
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-                autoFocus
-                className="w-[200px]"
-              />
-            ) : (
-              <div>
-                <span>{file.name}</span>
-                <span className="text-sm text-muted-foreground ml-2">
-                  Created: {file.created} • Modified: {file.modified}
-                </span>
-              </div>
-            )}
-          </div>
+}: FileListItemProps) => (
+  <ContextMenu>
+    <ContextMenuTrigger>
+      <div
+        className="flex items-center justify-between p-1 px-2 hover:bg-accent transition-all duration-100 cursor-pointer"
+        onDoubleClick={() => onDoubleClick(file)}
+      >
+        <div className="flex items-center gap-2 flex-1">
+          {file.isDirectory ? (
+            <LucideFolder className="min-h-4 min-w-4 w-4 h-4" />
+          ) : (
+            iconMap[file.name.split(".").pop() as keyof typeof iconMap] || (
+              <LucideFile className="min-h-4 min-w-4 w-4 h-4" />
+            )
+          )}
+          {renamingFile === file.name ? (
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onRename(file.name, newName);
+                } else if (e.key === "Escape") {
+                  setRenamingFile(null);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              autoFocus
+              className="w-[200px]"
+            />
+          ) : (
+            <div>
+              <span>{file.name}</span>
+              <span className="text-sm text-muted-foreground ml-2">
+                Created: {file.created} • Modified: {file.modified}
+              </span>
+            </div>
+          )}
         </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        {!file.isDirectory && (
-          <ContextMenuItem onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Save to Local Disk
-          </ContextMenuItem>
-        )}
-        <ContextMenuItem
-          onClick={() => {
-            setRenamingFile(file.name);
-            setNewName(file.name);
-          }}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Rename
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onDelete(file.name)}>
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  );
-};
+      </div>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      <ContextMenuItem
+        onClick={() => {
+          setRenamingFile(file.name);
+          setNewName(file.name);
+        }}
+      >
+        <Edit className="h-4 w-4 mr-2" />
+        Rename
+      </ContextMenuItem>
+      <ContextMenuItem onClick={() => onDelete(file.name)}>
+        <Trash2 className="h-4 w-4 mr-2" />
+        Delete
+      </ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
+);
 
 interface TempFileInputProps {
   tempFile: { type: "file" | "directory"; name: string };
@@ -424,7 +389,6 @@ const FilesApp = () => {
                   onDelete={deleteFile}
                   onDoubleClick={handleItemClick}
                   setRenamingFile={setRenamingFile}
-                  currentDirectory={currentDirectory}
                 />
               ))}
 

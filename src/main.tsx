@@ -57,9 +57,10 @@ createRoot(document.getElementById("root")!).render(
         <Setup />
       ) : (
         <>
+          
+          
           <Desktop />
           <WindowManager />
-          <Dock />
           <Notifications />
         </>
       )}

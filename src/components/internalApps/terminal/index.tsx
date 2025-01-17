@@ -4,7 +4,7 @@ import { useWindowStore } from "@/stores/windowStore";
 import { WindowType } from "@/types/storeTypes";
 import { Maximize2Icon, SettingsIcon, ShrinkIcon, X } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
-import { useTerminalStore } from "./store";
+import { useTerminalStore, TerminalLine } from "./store";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Constants for terminal rendering
@@ -20,12 +20,13 @@ function calculateTerminalDimensions(width: number, height: number) {
 }
 
 // Calculate total height needed for all lines
-function calculateTotalHeight(lines: string[], currentInput: string, dimensions: { cols: number, rows: number }, programRunning: boolean): number {
+function calculateTotalHeight(lines: (string | TerminalLine)[], currentInput: string, dimensions: { cols: number, rows: number }, programRunning: boolean): number {
   let totalLines = 0;
   
   // Count wrapped lines from history
   for (const line of lines) {
-    totalLines += Math.max(1, Math.ceil(line.length / dimensions.cols));
+    const text = typeof line === 'string' ? line : line.text;
+    totalLines += Math.max(1, Math.ceil(text.length / dimensions.cols));
   }
   
   // Add current input line if not running a program
@@ -39,20 +40,22 @@ function calculateTotalHeight(lines: string[], currentInput: string, dimensions:
 
 // Helper function to wrap text into lines based on terminal width
 function wrapText(text: string, cols: number): string[] {
-  const words = text.split('');
+  // If text is short enough, return as is
+  if (text.length <= cols) {
+    return [text];
+  }
+
   const lines: string[] = [];
   let currentLine = '';
 
-  for (let i = 0; i < words.length; i++) {
-    const char = words[i];
+  for (let i = 0; i < text.length; i++) {
+    currentLine += text[i];
     if (currentLine.length >= cols) {
       lines.push(currentLine);
-      currentLine = char;
-    } else {
-      currentLine += char;
+      currentLine = '';
     }
   }
-  
+
   if (currentLine) {
     lines.push(currentLine);
   }
@@ -80,7 +83,7 @@ export function TerminalHeader({ windowProps }: { windowProps: WindowType }) {
       <p>Terminal</p>
       <div className="inline-flex items-center gap-2">
         <Popover>
-          <PopoverTrigger>
+          <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
@@ -253,12 +256,19 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
     const startY = PADDING + CHAR_HEIGHT;
     let currentY = startY - scrollTop;
 
+    // Helper function to render text
+    const renderText = (text: string, x: number, y: number, color?: string) => {
+      ctx.fillStyle = color || '#fff';
+      ctx.font = `${CHAR_HEIGHT}px ${FONT_FAMILY}`;
+      ctx.fillText(text, x, y);
+    };
+
     // Render previous lines
     for (const line of lines) {
-      const wrappedLines = wrapText(line, dimensions.cols);
+      const wrappedLines = wrapText(typeof line === 'string' ? line : line.text, dimensions.cols);
       for (const wrappedLine of wrappedLines) {
         if (currentY + CHAR_HEIGHT > 0 && currentY < canvas.height / dpr) {
-          ctx.fillText(wrappedLine, PADDING, currentY);
+          renderText(wrappedLine, PADDING, currentY, typeof line === 'string' ? undefined : line.color);
         }
         currentY += CHAR_HEIGHT;
       }
@@ -268,7 +278,7 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
     if (!programRunning) {
       const prefix = '$ ';
       const fullInputLine = prefix + currentInput;
-      ctx.fillText(fullInputLine, PADDING, currentY);
+      renderText(fullInputLine, PADDING, currentY);
 
       // Draw cursor
       if (showCursor && focused) {
@@ -393,6 +403,16 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
             useTerminalStore.getState().addLine("^C");
           }
           return;
+        case "v":
+          if (e.shiftKey) {
+            e.preventDefault();
+            navigator.clipboard.readText().then(text => {
+              const newInput = currentInput.slice(0, cursorPosition) + text + currentInput.slice(cursorPosition);
+              useTerminalStore.getState().setInput(newInput);
+              useTerminalStore.getState().setCursor(cursorPosition + text.length);
+            });
+          }
+          return;
         case "z":
           e.preventDefault();
           if (programRunning) {
@@ -420,7 +440,7 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
           return;
         case "u": // Clear from cursor to start of line
           e.preventDefault();
-          const newInput = currentInput.slice(cursorPosition);
+          const newInput = currentInput.slice(0, cursorPosition);
           useTerminalStore.getState().setInput(newInput);
           useTerminalStore.getState().setCursor(0);
           return;
@@ -551,7 +571,7 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
       <TerminalHeader windowProps={windowProps} />
       <div
         ref={containerRef}
-        className="h-full flex flex-col font-mono overflow-hidden focus:outline-none relative"
+        className="h-full flex flex-col font-mono overflow-x-auto overflow-y-hidden focus:outline-none relative"
         onClick={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         tabIndex={0}

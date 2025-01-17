@@ -18,6 +18,9 @@ import axios from "axios";
 import fs from "@zenfs/core";
 import path from "path-browserify";
 import { ProgramContext } from "@/components/internalApps/terminal/store";
+import { useState } from "react";
+import { ANSIParser } from "@/lib/terminal/colors";
+
 // Helper function to extract URLs from HTML content
 const extractUrls = (html: string, baseUrl: string): string[] => {
   const urls: string[] = [];
@@ -251,7 +254,10 @@ const parseArgs = (args: string[]): { [key: string]: string } => {
   return result;
 };
 
-export const massDownload = async (jsonUrl: string): Promise<string> => {
+export const massDownload = async (
+  jsonUrl: string,
+  onProgress?: (progress: number, total: number) => void
+): Promise<string> => {
   // Get download.json and parse it
   const response = await axios.get(jsonUrl);
   const downloadJson = response.data;
@@ -263,6 +269,12 @@ export const massDownload = async (jsonUrl: string): Promise<string> => {
   if (!baseUrl) {
     throw new Error("No host URL found in metadata");
   }
+
+  // Calculate total files
+  const totalFiles = downloadJson.reduce((acc: number, entry: any) => 
+    entry.type !== "metadata" ? acc + (entry.files?.length || 0) : acc, 0
+  );
+  let completedFiles = 0;
 
   // Process each directory entry
   for (const entry of downloadJson) {
@@ -276,10 +288,39 @@ export const massDownload = async (jsonUrl: string): Promise<string> => {
         outputDir: entry.outputDir,
         filename: filename,
       });
+      completedFiles++;
+      onProgress?.(completedFiles, totalFiles);
     }
   }
 
   return "Downloaded";
+};
+
+export const useDownload = () => {
+  const [status, setStatus] = useState<'pending' | 'inProgress' | 'finished'>('pending');
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
+
+  const startDownload = async (jsonUrl: string): Promise<void> => {
+    try {
+      setStatus('inProgress');
+      setProgress({ completed: 0, total: 0 });
+      await massDownload(jsonUrl, (completed, total) => {
+        setProgress({ completed, total });
+      });
+      setStatus('finished');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Download failed');
+      setStatus('pending');
+    }
+  };
+
+  return {
+    status,
+    error,
+    progress,
+    startDownload
+  };
 };
 
 export const help = (cmd: string): string => {
@@ -299,6 +340,78 @@ export const loggingTest = async (context: ProgramContext): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 1));
   }
   return counter < 100 ? "Logging test stopped" : "Logging test complete";
+};
+
+export const colors = (context: ProgramContext): string => {
+  const lines: string[] = [];
+
+  // Color ramp test
+  lines.push("[1m](Color Ramp Test:)[0m]");
+  const pattern = "/\\/\\/\\/\\/\\";
+  const repeatedPattern = pattern.repeat(8);
+  
+  for (let colnum = 0; colnum < 77; colnum++) {
+    const r = Math.round(255 - (colnum * 255 / 76));
+    let g = Math.round((colnum * 510 / 76));
+    const b = Math.round((colnum * 255 / 76));
+    if (g > 255) g = 510 - g;
+    
+    lines.push(`[${r};${g};${b}m](${repeatedPattern[colnum % repeatedPattern.length]})[0m]\n`);
+  }
+
+  // Grayscale ramp
+  lines.push("[1m](Grayscale Ramp (256 levels):)[0m]");
+  let grayscale = "";
+  for (let i = 0; i < 256; i += 2) {
+    grayscale += `[${i};${i};${i}m]( )[0m]`;
+    if (i % 16 === 0) grayscale += "\n";
+  }
+  lines.push(grayscale);
+
+  // Color fade text
+  lines.push("[1m](Smooth Color Fade Text:)[0m]");
+  const text = "This text smoothly transitions through the rainbow!";
+  let fadeText = "";
+  for (let i = 0; i < text.length; i++) {
+    const progress = i / text.length;
+    const [r1, g1, b1] = hslToRgb(progress * 360, 1, 0.5);
+    fadeText += `[${r1};${g1};${b1}m](${text[i]})[0m]`;
+    if ((i + 1) % 50 === 0) fadeText += "\n";
+  }
+  lines.push(fadeText);
+
+  return lines.join("\n");
+};
+
+// Helper function to convert HSL to RGB
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h / 360 + 1/3);
+    g = hue2rgb(p, q, h / 360);
+    b = hue2rgb(p, q, h / 360 - 1/3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+export const echo = (context: ProgramContext, ...args: string[]): string => {
+  // Join all arguments with spaces, preserving quotes if they were used
+  return args.join(' ');
 };
 
 export const commands = [
@@ -362,9 +475,7 @@ export const commands = [
       let frameCount = 0;
       let lastFrameTime = performance.now();
       let frameTimeSum = 0;
-      let frameTimeMin = Infinity;
       let frameTimeMax = 0;
-      let lastPollTime = performance.now();
       let frameTimes: number[] = [];
       const FRAME_TIME_WINDOW = 100; // Track last 100 frames for smoother averages
       
@@ -375,7 +486,6 @@ export const commands = [
 
         // Update frame time stats
         if (debug) {
-          frameTimeMin = Math.min(frameTimeMin, frameTime);
           frameTimeMax = Math.max(frameTimeMax, frameTime);
           frameTimes.push(frameTime);
           if (frameTimes.length > FRAME_TIME_WINDOW) {
@@ -424,7 +534,7 @@ export const commands = [
           const avgFrameTime = frameTimeSum / frameTimes.length;
           const currentFps = Math.round(1000 / frameTime);
           const avgFps = Math.round(1000 / avgFrameTime);
-          stats = `Frame: ${frameCount} | Current: ${currentFps}fps (${frameTime.toFixed(1)}ms) | Avg: ${avgFps}fps (${avgFrameTime.toFixed(1)}ms) | Min: ${frameTimeMin.toFixed(1)}ms | Max: ${frameTimeMax.toFixed(1)}ms`;
+          stats = `Frame: ${frameCount} | Current: ${currentFps}fps (${frameTime.toFixed(1)}ms) | Avg: ${avgFps}fps (${avgFrameTime.toFixed(1)}ms) | Max: ${frameTimeMax.toFixed(1)}ms`;
         }
         
         if (stats) {
@@ -434,6 +544,20 @@ export const commands = [
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
       return "Donut animation stopped";
+    },
+  },
+  {
+    name: "colors",
+    description: "Display a demonstration of 24-bit color support",
+    usage: "colors",
+    command: colors,
+  },
+  {
+    name: "echo",
+    description: "Display a line of text, supporting ANSI color sequences",
+    usage: "echo [text...]",
+    command: (context: ProgramContext, ...args: string[]) => {
+      return echo(context, ...args);
     },
   },
 ];
