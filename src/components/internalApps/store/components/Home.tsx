@@ -1,14 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
-
-export interface App {
-  id: string;
-  name: string;
-  version: string;
-  description: string;
-  dataPath: string;
-}
+import { AppType } from "@/types/storeTypes";
 
 const getApps = async () => {
   const response = await fetch(
@@ -25,7 +18,7 @@ export default function Home() {
     <div className={"flex flex-col gap-2 w-full h-full"}>
       <h1 className={"text-2xl"}>App Store</h1>
       <div className={"flex flex-wrap gap-2 w-full h-full"}>
-        {query.data?.map((app: App) => (
+        {query.data?.map((app: AppType) => (
           <Button key={app.id} onClick={() => navigate(`/app/${app.id}`)}>
             <h1>
               {app.name} - {app.version}

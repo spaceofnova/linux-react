@@ -142,7 +142,7 @@ const SettingsApp = ({
           >
             <span className="text-sm font-medium">{setting.label}</span>
             <Button onClick={setting.onClick} variant="outline" size="sm">
-              {setting.label}
+              {setting.secondaryLabel || setting.label}
             </Button>
           </div>
         );

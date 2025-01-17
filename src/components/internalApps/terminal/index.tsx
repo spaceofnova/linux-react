@@ -5,11 +5,72 @@ import { WindowType } from "@/types/storeTypes";
 import { Maximize2Icon, SettingsIcon, ShrinkIcon, X } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { useTerminalStore } from "./store";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// Constants for terminal rendering
+const CHAR_WIDTH = 9; // Approximate width of a character in pixels
+const CHAR_HEIGHT = 16; // Height of a character/line in pixels
+const PADDING = 8; // Padding around the terminal content
+const FONT_FAMILY = 'Consolas, "Courier New", monospace';
+
+function calculateTerminalDimensions(width: number, height: number) {
+  const cols = Math.floor((width - 2 * PADDING) / CHAR_WIDTH);
+  const rows = Math.floor((height - 2 * PADDING) / CHAR_HEIGHT);
+  return { cols, rows };
+}
+
+// Calculate total height needed for all lines
+function calculateTotalHeight(lines: string[], currentInput: string, dimensions: { cols: number, rows: number }, programRunning: boolean): number {
+  let totalLines = 0;
+  
+  // Count wrapped lines from history
+  for (const line of lines) {
+    totalLines += Math.max(1, Math.ceil(line.length / dimensions.cols));
+  }
+  
+  // Add current input line if not running a program
+  if (!programRunning) {
+    const inputLine = '$ ' + currentInput;
+    totalLines += Math.max(1, Math.ceil(inputLine.length / dimensions.cols));
+  }
+  
+  return (totalLines + 1) * CHAR_HEIGHT + 2 * PADDING; // +1 for the dimensions display
+}
+
+// Helper function to wrap text into lines based on terminal width
+function wrapText(text: string, cols: number): string[] {
+  const words = text.split('');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const char = words[i];
+    if (currentLine.length >= cols) {
+      lines.push(currentLine);
+      currentLine = char;
+    } else {
+      currentLine += char;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
 
 export function TerminalHeader({ windowProps }: { windowProps: WindowType }) {
   const { maximizeWindow, restoreWindow, closeWindow, focusWindow } = useWindowStore();
+  const autoScrollEnabled = useTerminalStore((state) => state.autoScrollEnabled);
+  const debugLoggingEnabled = useTerminalStore((state) => state.debugLoggingEnabled);
 
   const handleClose = () => {
+    useTerminalStore.getState().setProgramRunning(false);
+    useTerminalStore.getState().programContext = null;
+    useTerminalStore.getState().lines = [];
+    useTerminalStore.getState().currentInput = "";
+    useTerminalStore.getState().cursorPosition = 0;
     closeWindow(windowProps.id!);
     focusWindow(null);
   };
@@ -18,20 +79,44 @@ export function TerminalHeader({ windowProps }: { windowProps: WindowType }) {
     <div className="h-8 w-full px-2 inline-flex justify-between items-center border-b titlebar">
       <p>Terminal</p>
       <div className="inline-flex items-center gap-2">
-      <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={() => {}}
-          title="Settings"
-        >
-          <SettingsIcon size={6} />
-        </Button>
+        <Popover>
+          <PopoverTrigger>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              title="Settings"
+            >
+              <SettingsIcon size={6} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent>
+            <div className="p-2 flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={autoScrollEnabled}
+                  onChange={(e) => useTerminalStore.getState().setAutoScroll(e.target.checked)}
+                  className="form-checkbox h-4 w-4"
+                />
+                Auto-scroll enabled
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={debugLoggingEnabled}
+                  onChange={(e) => useTerminalStore.getState().setDebugLogging(e.target.checked)}
+                  className="form-checkbox h-4 w-4"
+                />
+                Debug logging enabled
+              </label>
+            </div>
+          </PopoverContent>
+        </Popover>
         <Button
           variant="ghost"
           size="icon"
           className="h-6 w-6"
-          title={windowProps.isMaximized ? "Restore" : "Maximize"}
           onClick={() =>
             !windowProps.isMaximized
               ? maximizeWindow(windowProps.id!)
@@ -63,15 +148,52 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
   const programRunning = useTerminalStore((state) => state.programRunning);
   const currentInput = useTerminalStore((state) => state.currentInput);
   const cursorPosition = useTerminalStore((state) => state.cursorPosition);
-  const terminalRef = useRef<HTMLDivElement>(null);
+  const setDimensions = useTerminalStore((state) => state.setDimensions);
+  const autoScrollEnabled = useTerminalStore((state) => state.autoScrollEnabled);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
+  const [dimensions, setLocalDimensions] = useState({ cols: 0, rows: 0 });
+  const [scrollTop, setScrollTop] = useState(0);
 
-  // Auto-scroll to bottom when lines change or input changes
+  // Auto-scroll effect
   useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    if (autoScrollEnabled && canvasRef.current) {
+      const totalHeight = calculateTotalHeight(lines, currentInput, dimensions, programRunning);
+      const canvasHeight = canvasRef.current.height;
+      if (totalHeight > canvasHeight) {
+        setScrollTop(totalHeight - canvasHeight);
+      }
     }
-  }, [lines, currentInput]);
+  }, [lines, currentInput, dimensions, programRunning, autoScrollEnabled]);
+
+  // Handle scroll events
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const totalHeight = calculateTotalHeight(lines, currentInput, dimensions, programRunning);
+      const canvasHeight = canvasRef.current?.height || 0;
+      const maxScroll = Math.max(0, totalHeight - canvasHeight);
+      
+      const newScrollTop = Math.min(
+        maxScroll,
+        Math.max(0, scrollTop + e.deltaY)
+      );
+      
+      setScrollTop(newScrollTop);
+      
+      // Only update auto-scroll if it's currently enabled
+      if (autoScrollEnabled) {
+        useTerminalStore.getState().setAutoScroll(newScrollTop >= maxScroll);
+      }
+    };
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('wheel', handleWheel, { passive: false });
+      return () => canvas.removeEventListener('wheel', handleWheel);
+    }
+  }, [scrollTop, lines, currentInput, dimensions, programRunning, autoScrollEnabled]);
 
   // Cursor blink effect
   const [showCursor, setShowCursor] = useState(true);
@@ -80,6 +202,153 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
     const interval = setInterval(() => setShowCursor((prev) => !prev), 530);
     return () => clearInterval(interval);
   }, [focused]);
+
+  // Separate render function
+  const renderTerminal = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    useTerminalStore.getState().log('Rendering terminal, lines:', lines.length);
+    useTerminalStore.getState().log('Canvas size:', canvas.width, canvas.height);
+
+    const dpr = window.devicePixelRatio || 1;
+
+    // Clear canvas with proper scaling
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Reset any previous transforms
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // Apply DPI scaling
+    ctx.scale(dpr, dpr);
+
+    // Set text properties and check font loading
+    ctx.font = `${CHAR_HEIGHT}px ${FONT_FAMILY}`;
+    ctx.textBaseline = 'top';
+    ctx.imageSmoothingEnabled = false;
+
+    // Test if font is loaded
+    const testChar = 'M';
+    const metrics = ctx.measureText(testChar);
+    useTerminalStore.getState().log('Font metrics for "' + testChar + '":', {
+      width: metrics.width,
+      height: CHAR_HEIGHT,
+      fontFamily: ctx.font,
+      actualBoundingBox: {
+        ascent: metrics.actualBoundingBoxAscent,
+        descent: metrics.actualBoundingBoxDescent,
+        left: metrics.actualBoundingBoxLeft,
+        right: metrics.actualBoundingBoxRight
+      }
+    });
+
+    // Render terminal size indicator
+    ctx.fillStyle = '#666';
+    ctx.fillText(`${dimensions.cols}x${dimensions.rows}`, PADDING, PADDING);
+    ctx.fillStyle = '#fff';
+
+    // Calculate visible range
+    const startY = PADDING + CHAR_HEIGHT;
+    let currentY = startY - scrollTop;
+
+    // Render previous lines
+    for (const line of lines) {
+      const wrappedLines = wrapText(line, dimensions.cols);
+      for (const wrappedLine of wrappedLines) {
+        if (currentY + CHAR_HEIGHT > 0 && currentY < canvas.height / dpr) {
+          ctx.fillText(wrappedLine, PADDING, currentY);
+        }
+        currentY += CHAR_HEIGHT;
+      }
+    }
+
+    // Render current input line
+    if (!programRunning) {
+      const prefix = '$ ';
+      const fullInputLine = prefix + currentInput;
+      ctx.fillText(fullInputLine, PADDING, currentY);
+
+      // Draw cursor
+      if (showCursor && focused) {
+        const cursorX = PADDING + (prefix.length + cursorPosition) * CHAR_WIDTH;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(cursorX, currentY, CHAR_WIDTH, CHAR_HEIGHT);
+        ctx.fillStyle = '#000';
+        ctx.fillText(currentInput[cursorPosition] || ' ', cursorX, currentY);
+        ctx.fillStyle = '#fff';
+      }
+    }
+  };
+
+  // Handle canvas resize with debounce
+  useEffect(() => {
+    let resizeTimeout: number;
+    const handleResize = () => {
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (!container || !canvas) return;
+
+      const rect = container.getBoundingClientRect();
+      useTerminalStore.getState().log('Container size:', rect.width, rect.height);
+      
+      const dpr = window.devicePixelRatio || 1;
+      useTerminalStore.getState().log('DPR:', dpr);
+
+      // Set canvas size accounting for DPI
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+
+      // Calculate and update terminal dimensions
+      const newDimensions = calculateTerminalDimensions(rect.width, rect.height);
+      useTerminalStore.getState().log('New dimensions:', newDimensions);
+      
+      setLocalDimensions(newDimensions);
+      setDimensions(newDimensions);
+
+      // Force a render with the new dimensions
+      renderTerminal();
+    };
+
+    // Debounced resize handler
+    const debouncedResize = () => {
+      window.clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(handleResize, 100);
+    };
+
+    useTerminalStore.getState().log('Setting up resize handler');
+    handleResize();
+
+    // Add resize observer with debounce
+    const resizeObserver = new ResizeObserver(debouncedResize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.clearTimeout(resizeTimeout);
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Add initial content only once
+  useEffect(() => {
+    const store = useTerminalStore.getState();
+    if (store.lines.length === 0) {
+      store.log('Adding initial content');
+      store.addLine('Welcome to Terminal');
+      store.addLine('Type "help" for a list of commands');
+      store.log('Current lines:', store.lines);
+    }
+  }, []);
+
+  // Update rendering when content changes
+  useEffect(() => {
+    renderTerminal();
+  }, [lines, currentInput, cursorPosition, showCursor, focused, dimensions, programRunning, scrollTop]);
 
   const handleRunCommand = async (commandLine: string) => {
     if (!commandLine.trim()) return;
@@ -278,35 +547,24 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
   }, [focused, currentInput, cursorPosition, programRunning]);
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-black">
       <TerminalHeader windowProps={windowProps} />
       <div
-        className="h-full flex flex-col bg-black font-mono p-1 overflow-auto"
+        ref={containerRef}
+        className="h-full flex flex-col font-mono overflow-hidden focus:outline-none relative"
         onClick={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         tabIndex={0}
       >
-        <div
-          ref={terminalRef}
-          className="flex-1 overflow-auto whitespace-pre-wrap break-all"
-        >
-          {lines.map((line, index) => (
-            <div key={index}>{line}</div>
-          ))}
-          {!programRunning && (
-            <div>
-              $ {currentInput.slice(0, cursorPosition)}
-              <span
-                className={`bg-white text-black ${
-                  showCursor && focused ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                {currentInput[cursorPosition] || " "}
-              </span>
-              {currentInput.slice(cursorPosition + 1)}
-            </div>
-          )}
-        </div>
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0"
+          style={{ 
+            fontSmooth: 'never', 
+            WebkitFontSmoothing: 'none',
+            imageRendering: 'pixelated'
+          }}
+        />
       </div>
     </div>
   );

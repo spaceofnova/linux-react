@@ -14,13 +14,6 @@ export default function Settings() {
     launchApp(input);
   };
 
-  // const fetchTest = async () => {
-  //   const response = await fetch(
-  //     "/files/apps/api.test/assets/index-_xqS-YfD.js"
-  //   );
-  //   const data = await response.text();
-  //   console.log(data);
-  // };
   return (
     <div>
       <Button onClick={() => navigate("/")}>Back</Button>

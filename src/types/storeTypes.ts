@@ -49,6 +49,10 @@ export interface WindowType {
   noResize?: boolean;
   icon?: string;
   deepLink?: string;
+  pickerMode?: boolean;
+  fileTypes?: string[];
+  allowMultiple?: boolean;
+  selectedFile?: string;
 }
 
 export interface WindowStoreType {
@@ -63,4 +67,26 @@ export interface WindowStoreType {
   moveWindow: (id: string, position: Position, relative: boolean) => void;
   resizeWindow: (id: string, Size: Size, newpos: Position) => void;
   updateWindow: (id: string, updates: Partial<WindowType>) => void;
+}
+
+export interface NotificationType {
+  id: string;
+  message: string;
+  type?: 'success' | 'error' | 'info' | 'warning' | 'default';
+  duration?: number;
+  description?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  store?: boolean;
+}
+
+type NotificationInput = Omit<NotificationType, 'id'>;
+
+export interface NotificationStoreType {
+  notifications: NotificationType[];
+  notify: (notification: NotificationInput) => void;
+  removeNotification: (id: string) => void;
+  clearNotifications: () => void;
 }

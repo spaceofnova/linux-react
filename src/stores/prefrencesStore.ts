@@ -7,11 +7,16 @@ const DEFAULT_PREFRENCES: PrefrenceValues = {
   display: {
     screenZoom: "100%",
   },
+  dock: {
+    autoHideDock: false,
+    iconSize: "medium",
+  },
   developer: {
     debugMode: false,
   },
   appearance: {
     userWallpaper: "/home/wallpaper.jpg",
+    blurEffects: true,
   },
   hidden: {
     showWelcomeApp: true,
@@ -26,6 +31,9 @@ const configFileStorage = {
         return DEFAULT_PREFRENCES;
       }
       const data = fs.readFileSync(CONFIG_PATH, "utf-8");
+      if (!data || data === "" || data === "{}" || data.length === 0) {
+        return DEFAULT_PREFRENCES;
+      }
       return JSON.parse(data);
     } catch (error) {
       console.error("Failed to load preferences:", error);
@@ -105,18 +113,18 @@ type Prev = [
   18,
   19,
   20,
-  ...0[],
+  ...0[]
 ];
 
 type Paths<T, D extends number = 10> = [D] extends [never]
   ? never
   : T extends object
-    ? {
-        [K in keyof T]-?: K extends string | number
-          ? `${K}` | Join<K, Paths<T[K], Prev[D]>>
-          : never;
-      }[keyof T]
-    : "";
+  ? {
+      [K in keyof T]-?: K extends string | number
+        ? `${K}` | Join<K, Paths<T[K], Prev[D]>>
+        : never;
+    }[keyof T]
+  : "";
 
 type NestedKeyOf<T> = Paths<T>;
 
@@ -125,8 +133,8 @@ type PathValue<T, P extends string> = P extends `${infer Key}.${infer Rest}`
     ? PathValue<T[Key], Rest>
     : unknown
   : P extends keyof T
-    ? T[P]
-    : unknown;
+  ? T[P]
+  : unknown;
 
 interface PrefrencesStoreType {
   prefrences: PrefrenceValues;

@@ -1,0 +1,16 @@
+[
+  {
+    "type": "metadata",
+    "hosturl": "https://raw.githubusercontent.com/spaceofnova/linux-react-data-store/main/root/assets"
+  },
+  {
+    "outputDir": "root/assets",
+    "files": [
+      "com.system.files.svg",
+      "com.system.settings.svg",
+      "com.system.store.svg",
+      "com.system.terminal.svg",
+      "com.system.welcome.svg"
+    ]
+  }
+] 

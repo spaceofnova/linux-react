@@ -1,16 +1,23 @@
-import "@/index.css";
-import { configure } from "@zenfs/core";
-import { createRoot } from "react-dom/client";
-import { IndexedDB } from "@zenfs/dom";
-
-import { WindowManager } from "@/components/WMDisplay";
-import { setupWindowEventHandlers } from "@/functions/dispatcher";
-import { ThemeProvider } from "@/stores/themestore";
+// Components
+import { Desktop } from "./components/Desktop";
 import Dock from "@/components/MagicDock";
-import { Toaster } from "@/components/ui/sonner";
+import { Notifications } from "@/components/NotificationDisplay";
+import Setup from "@/components/Setup";
+import { ThemeProvider } from "@/stores/themestore";
+import { WindowManager } from "@/components/WMDisplay";
+
+// Functions
+import { setupWindowEventHandlers } from "@/functions/dispatcher";
 import { SetupAppsWatcher, useAppStore } from "@/stores/appstore";
 import { LoadPrefrences, usePrefrencesStore } from "@/stores/prefrencesStore";
-import Setup from "@/components/Setup";
+
+// Types
+import { configure } from "@zenfs/core";
+import { IndexedDB } from "@zenfs/dom";
+import { createRoot } from "react-dom/client";
+
+// Other
+import "@/index.css";
 
 await configure({
   mounts: {
@@ -50,9 +57,10 @@ createRoot(document.getElementById("root")!).render(
         <Setup />
       ) : (
         <>
+          <Desktop />
           <WindowManager />
           <Dock />
-          <Toaster />
+          <Notifications />
         </>
       )}
     </div>

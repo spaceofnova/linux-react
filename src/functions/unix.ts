@@ -17,6 +17,7 @@ Simple functions to use as unix command replacments
 import axios from "axios";
 import fs from "@zenfs/core";
 import path from "path-browserify";
+import { ProgramContext } from "@/components/internalApps/terminal/store";
 // Helper function to extract URLs from HTML content
 const extractUrls = (html: string, baseUrl: string): string[] => {
   const urls: string[] = [];
@@ -289,18 +290,13 @@ export const help = (cmd: string): string => {
   return `${command.name}: ${command.description}\nUsage: ${command.usage}`;
 };
 
-interface ProgramContext {
-  shouldStop: boolean;
-  log: (message: string) => void;
-}
-
 export const loggingTest = async (context: ProgramContext): Promise<string> => {
   let counter = 0;
   while (counter < 100 && !context.shouldStop) {
     context.log(
       `Log message #${counter++} at ${new Date().toLocaleTimeString()}`
     );
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 1));
   }
   return counter < 100 ? "Logging test stopped" : "Logging test complete";
 };
@@ -356,13 +352,41 @@ export const commands = [
   {
     name: "donut",
     description: "Display a spinning ASCII donut animation",
-    usage: "donut",
-    command: async (context: ProgramContext) => {
+    usage: "donut [-debug]",
+    command: async (context: ProgramContext, ...args: string[]) => {
+      const parsedArgs = parseArgs(args);
+      const debug = parsedArgs["debug"] === "true";
+      
       let A = 0,
         B = 0;
+      let frameCount = 0;
+      let lastFrameTime = performance.now();
+      let frameTimeSum = 0;
+      let frameTimeMin = Infinity;
+      let frameTimeMax = 0;
+      let lastPollTime = performance.now();
+      let frameTimes: number[] = [];
+      const FRAME_TIME_WINDOW = 100; // Track last 100 frames for smoother averages
+      
       while (!context.shouldStop) {
+        const currentTime = performance.now();
+        const frameTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
+
+        // Update frame time stats
+        if (debug) {
+          frameTimeMin = Math.min(frameTimeMin, frameTime);
+          frameTimeMax = Math.max(frameTimeMax, frameTime);
+          frameTimes.push(frameTime);
+          if (frameTimes.length > FRAME_TIME_WINDOW) {
+            frameTimes.shift();
+          }
+          frameTimeSum = frameTimes.reduce((a, b) => a + b, 0);
+        }
+
         A += 0.07;
         B += 0.03;
+        frameCount++;
 
         const b = Array(1760).fill(" ");
         const z = Array(1760).fill(0);
@@ -393,9 +417,21 @@ export const commands = [
             }
           }
         }
-       
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        context.log(b.join("").replace(/(.{80})/g, "$1\n"));
+        context.clear();
+        
+        let stats = "";
+        if (debug) {
+          const avgFrameTime = frameTimeSum / frameTimes.length;
+          const currentFps = Math.round(1000 / frameTime);
+          const avgFps = Math.round(1000 / avgFrameTime);
+          stats = `Frame: ${frameCount} | Current: ${currentFps}fps (${frameTime.toFixed(1)}ms) | Avg: ${avgFps}fps (${avgFrameTime.toFixed(1)}ms) | Min: ${frameTimeMin.toFixed(1)}ms | Max: ${frameTimeMax.toFixed(1)}ms`;
+        }
+        
+        if (stats) {
+          b.splice(0, stats.length, ...stats.split(""));
+        }
+        context.writeScreen(b.join("").replace(/(.{80})/g, "$1\n").split("\n"));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
       return "Donut animation stopped";
     },

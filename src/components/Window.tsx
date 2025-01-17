@@ -2,23 +2,23 @@ import { useWindowStore } from "@/stores/windowStore";
 import { WindowType } from "@/types/storeTypes";
 import { Rnd } from "react-rnd";
 import React, { useCallback, useEffect, useState } from "react";
-import { motion } from "motion/react";
 import { easings } from "@/lib/easings";
 import { Maximize2Icon, ShrinkIcon, X } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/appstore";
 import fs from "@zenfs/core";
+import { usePrefrencesStore } from "@/stores/prefrencesStore";
+import { MotionView } from "./ui/View";
 
-export const Window: React.FC<WindowType> = ({
-  ...windowProps
-}) => {
+export const Window: React.FC<WindowType> = ({ ...windowProps }) => {
   // Early return if no id
   if (!windowProps.id) return null;
 
   // State
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [iframeDoc, setIframeDoc] = useState<string | null>(null);
+  const prefrences = usePrefrencesStore.getState().prefrences;
 
   // Store hooks
   const {
@@ -41,8 +41,13 @@ export const Window: React.FC<WindowType> = ({
   useEffect(() => {
     if (windowProps.filePath && !windowProps.ReactElement) {
       try {
-        const folderPath = apps.find((app) => app.id === windowProps.id)?.folderPath;
-        const html = fs.readFileSync(`${folderPath}/${windowProps.filePath}`, "utf-8");
+        const folderPath = apps.find(
+          (app) => app.id === windowProps.id
+        )?.folderPath;
+        const html = fs.readFileSync(
+          `${folderPath}/${windowProps.filePath}`,
+          "utf-8"
+        );
         setIframeDoc(html);
       } catch (e) {
         console.error(`Failed to read file: ${e}`);
@@ -62,7 +67,9 @@ export const Window: React.FC<WindowType> = ({
             className="h-6 w-6"
             title={windowProps.isMaximized ? "Restore" : "Maximize"}
             onClick={() =>
-              !windowProps.isMaximized ? maximizeWindow(windowProps.id!) : restoreWindow(windowProps.id!)
+              !windowProps.isMaximized
+                ? maximizeWindow(windowProps.id!)
+                : restoreWindow(windowProps.id!)
             }
           >
             {!windowProps.isMaximized ? (
@@ -115,7 +122,10 @@ export const Window: React.FC<WindowType> = ({
       disableDragging={windowProps.isMaximized}
       onDragStart={() => setIsDragging(true)}
       style={{ zIndex: windowProps.zIndex }}
-      size={{ width: windowProps.size?.width ?? 200, height: windowProps.size?.height ?? 200 }}
+      size={{
+        width: windowProps.size?.width ?? 200,
+        height: windowProps.size?.height ?? 200,
+      }}
       position={windowProps.position}
       onDragStop={(_e, d) => {
         moveWindow(windowProps.id!, d, false);
@@ -135,26 +145,19 @@ export const Window: React.FC<WindowType> = ({
       onMouseDown={() => focusWindow(windowProps.id!)}
       dragHandleClassName={"titlebar"}
     >
-      <motion.div
+      <MotionView
+        className="w-full h-full"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.2, ease: easings.easeOutExpo }}
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "hsl(var(--background))",
-          border: "1px solid",
-          borderRadius: windowProps.isMaximized ? "0" : "2px",
-          borderColor: windowProps.isFocused ? "hsl(var(--primary))" : "inherit"
-        }}
         data-window-id={windowProps.id}
       >
         {!windowProps.noControls && renderControls()}
         <ErrorBoundary errorMessage="An error occurred while rendering the window.">
           {renderContent()}
         </ErrorBoundary>
-      </motion.div>
+      </MotionView>
     </Rnd>
   );
 };

@@ -7,6 +7,7 @@ export interface BaseSettingConfig {
   label: string;
   hidden?: boolean;
   prefrence?: string;
+  secondaryLabel?: string;
 }
 
 export interface BooleanSettingConfig extends BaseSettingConfig {

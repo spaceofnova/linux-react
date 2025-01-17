@@ -16,7 +16,6 @@ export const internalApps: AppType[] = [
       title: "App Store",
       ReactElement: AppStore,
     },
-    icon: "/root/assets/app-store.png",
   },
   {
     id: "com.system.files",
@@ -28,7 +27,6 @@ export const internalApps: AppType[] = [
       title: "Files",
       ReactElement: FilesApp,
     },
-    icon: "/root/assets/files.png",
   },
   {
     id: "com.system.settings",
@@ -40,7 +38,6 @@ export const internalApps: AppType[] = [
       title: "Settings",
       ReactElement: SettingsApp,
     },
-    icon: "/root/assets/settings.png",
   },
   {
     id: "com.system.welcome",
@@ -58,7 +55,6 @@ export const internalApps: AppType[] = [
       noResize: true,
       noControls: true,
     },
-    icon: "/root/assets/welcome.png",
   },
   {
     id: "com.system.terminal",
@@ -71,6 +67,5 @@ export const internalApps: AppType[] = [
       ReactElement: TerminalApp,
       noControls: true,
     },
-    icon: "/root/assets/terminal.png",
   },
 ];

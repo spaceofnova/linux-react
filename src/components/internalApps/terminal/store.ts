@@ -1,8 +1,11 @@
 import { create } from "zustand";
 
-interface ProgramContext {
+export interface ProgramContext {
   shouldStop: boolean;
   log: (message: string) => void;
+  clear: () => void;
+  writeScreen: (lines: string[]) => void;
+  getTerminalSize: () => { cols: number; rows: number };
 }
 
 interface TerminalStore {
@@ -12,6 +15,9 @@ interface TerminalStore {
   historyIndex: number;
   currentInput: string;
   cursorPosition: number;
+  dimensions: { cols: number; rows: number };
+  autoScrollEnabled: boolean;
+  debugLoggingEnabled: boolean;
   addLine: (line: string) => void;
   updateLastLine: (line: string) => void;
   setProgramRunning: (running: boolean) => void;
@@ -21,6 +27,10 @@ interface TerminalStore {
   moveHistory: (direction: "up" | "down") => string;
   setInput: (input: string) => void;
   setCursor: (position: number) => void;
+  setDimensions: (dimensions: { cols: number; rows: number }) => void;
+  setAutoScroll: (enabled: boolean) => void;
+  setDebugLogging: (enabled: boolean) => void;
+  log: (message: string, ...args: any[]) => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
@@ -30,6 +40,9 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   historyIndex: -1,
   currentInput: "",
   cursorPosition: 0,
+  dimensions: { cols: 80, rows: 24 }, // Default terminal size
+  autoScrollEnabled: true,
+  debugLoggingEnabled: false,
   programContext: null,
   addLine: (line) => set((state) => ({ lines: [...state.lines, line] })),
   updateLastLine: (line) =>
@@ -54,6 +67,9 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     const context: ProgramContext = {
       shouldStop: false,
       log: (message: string) => get().addLine(message),
+      clear: () => set({ lines: [] }),
+      writeScreen: (lines: string[]) => set({ lines }),
+      getTerminalSize: () => get().dimensions,
     };
     set({ programContext: context, programRunning: true });
     return context;
@@ -81,4 +97,12 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
   setInput: (input) => set({ currentInput: input }),
   setCursor: (position) => set({ cursorPosition: position }),
+  setDimensions: (dimensions) => set({ dimensions }),
+  setAutoScroll: (enabled) => set({ autoScrollEnabled: enabled }),
+  setDebugLogging: (enabled) => set({ debugLoggingEnabled: enabled }),
+  log: (message: string, ...args: any[]) => {
+    if (get().debugLoggingEnabled) {
+      console.log(`[${new Date().toISOString()}] ${message}`, ...args);
+    }
+  },
 })); 

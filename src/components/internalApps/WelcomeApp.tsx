@@ -10,7 +10,7 @@ const WelcomeApp = () => {
   const prefrences = usePrefrencesStore((state) => state.prefrences);
   const updatePrefrence = usePrefrencesStore((state) => state.updatePrefrence);
   return (
-    <div className="flex flex-col h-full w-full p-4 text-center">
+    <div className="flex flex-col h-full w-full p-4 text-center titlebar">
       <div className="flex flex-col gap-3">
         <h1 className="text-xl font-bold">Welcome to Linux-React!</h1>
         <p>This is a simple app that links to some helpful resources.</p>
