@@ -1,6 +1,5 @@
 // Components
 import { Desktop } from "./components/Desktop";
-import Dock from "@/components/MagicDock";
 import { Notifications } from "@/components/NotificationDisplay";
 import Setup from "@/components/Setup";
 import { ThemeProvider } from "@/stores/themestore";
@@ -18,6 +17,8 @@ import { createRoot } from "react-dom/client";
 
 // Other
 import "@/index.css";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { MainErrorFault } from "./components/bigError";
 
 await configure({
   mounts: {
@@ -41,10 +42,9 @@ const functions = () => {
       }, 700);
     }
   };
-
+  LoadPrefrences();
   SetupAppsWatcher();
   setupWindowEventHandlers();
-  LoadPrefrences();
   showWelcomeApp();
 };
 
@@ -56,13 +56,11 @@ createRoot(document.getElementById("root")!).render(
       {setupLock === null ? (
         <Setup />
       ) : (
-        <>
-          
-          
+        <ErrorBoundary errorComponent={MainErrorFault}>
           <Desktop />
           <WindowManager />
           <Notifications />
-        </>
+        </ErrorBoundary>
       )}
     </div>
   </ThemeProvider>

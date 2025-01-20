@@ -94,6 +94,7 @@ export const wget = async (
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
+    logMessage(`Attempting to download: ${url}`);
     logMessage(`--${new Date().toISOString()}--  ${url}`);
     logMessage(`Saving to: '${outputPath}'`);
 
@@ -256,8 +257,9 @@ const parseArgs = (args: string[]): { [key: string]: string } => {
 
 export const massDownload = async (
   jsonUrl: string,
-  onProgress?: (progress: number, total: number) => void
+  onProgress?: (progress: number, total: number, currentFile?: string, currentDirectory?: string) => void
 ): Promise<string> => {
+  console.log(`Attempting to fetch download manifest from: ${jsonUrl}`);
   // Get download.json and parse it
   const response = await axios.get(jsonUrl);
   const downloadJson = response.data;
@@ -274,6 +276,7 @@ export const massDownload = async (
   const totalFiles = downloadJson.reduce((acc: number, entry: any) => 
     entry.type !== "metadata" ? acc + (entry.files?.length || 0) : acc, 0
   );
+  console.log(`Found ${totalFiles} files to download from ${baseUrl}`);
   let completedFiles = 0;
 
   // Process each directory entry
@@ -281,33 +284,69 @@ export const massDownload = async (
     // Skip metadata entry
     if (entry.type === "metadata") continue;
 
+    const outputDir = entry.outputDir || '.';
+    console.log(`Processing directory: ${outputDir}`);
+    
     // Download each file in the directory
     for (const filename of entry.files || []) {
       const fileUrl = `${baseUrl}/${filename}`;
+      console.log(`Attempting to download: ${fileUrl}`);
       await wget(fileUrl, {
-        outputDir: entry.outputDir,
-        filename: filename,
+        outputDir: outputDir,  // Use the cleaned outputDir
+        filename: path.basename(filename),  // Only use the filename part, not the full path
       });
       completedFiles++;
-      onProgress?.(completedFiles, totalFiles);
+      console.log(`Successfully downloaded: ${filename} (${completedFiles}/${totalFiles})`);
+      onProgress?.(completedFiles, totalFiles, filename, outputDir);
     }
   }
 
-  return "Downloaded";
+  return `Successfully downloaded ${completedFiles} files`;
 };
 
 export const useDownload = () => {
   const [status, setStatus] = useState<'pending' | 'inProgress' | 'finished'>('pending');
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
+  const [progress, setProgress] = useState<{
+    completed: number;
+    total: number;
+    percentage: number;
+    currentFile: string;
+    currentDirectory: string;
+  }>({
+    completed: 0,
+    total: 0,
+    percentage: 0,
+    currentFile: '',
+    currentDirectory: ''
+  });
 
   const startDownload = async (jsonUrl: string): Promise<void> => {
     try {
       setStatus('inProgress');
-      setProgress({ completed: 0, total: 0 });
-      await massDownload(jsonUrl, (completed, total) => {
-        setProgress({ completed, total });
+      setProgress({
+        completed: 0,
+        total: 0,
+        percentage: 0,
+        currentFile: '',
+        currentDirectory: ''
       });
+
+      // Create a wrapper for the progress callback
+      const onProgress = (completed: number, total: number, currentFile?: string, currentDirectory?: string) => {
+        setProgress({
+          completed,
+          total,
+          percentage: Math.round((completed / total) * 100),
+          currentFile: currentFile || '',
+          currentDirectory: currentDirectory || ''
+        });
+      };
+
+      await massDownload(jsonUrl, (completed, total, currentFile, currentDirectory) => {
+        onProgress(completed, total, currentFile, currentDirectory);
+      });
+      
       setStatus('finished');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download failed');
@@ -502,6 +541,7 @@ export const commands = [
         const z = Array(1760).fill(0);
 
         for (let j = 0; j < 6.28; j += 0.07) {
+          if (context.shouldStop) break;  // Check shouldStop during intensive loops
           for (let i = 0; i < 6.28; i += 0.02) {
             const c = Math.sin(i),
               d = Math.cos(j),

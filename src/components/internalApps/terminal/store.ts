@@ -10,6 +10,7 @@ export interface ProgramContext {
   clear: () => void;
   writeScreen: (lines: string[]) => void;
   shouldStop: boolean;
+  setShouldStop: (value: boolean) => void;
 }
 
 interface TerminalState {
@@ -108,6 +109,9 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       get shouldStop() {
         return shouldStop;
       },
+      setShouldStop: (value: boolean) => {
+        shouldStop = value;
+      }
     };
 
     set({ programContext: context, programRunning: true });

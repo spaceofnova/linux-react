@@ -160,6 +160,7 @@ export const Desktop = () => {
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+
     <Dock />
     </>
   );

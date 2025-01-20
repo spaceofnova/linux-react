@@ -399,6 +399,10 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
         case "c":
           e.preventDefault();
           if (programRunning) {
+            const context = useTerminalStore.getState().programContext;
+            if (context) {
+              context.setShouldStop(true);
+            }
             useTerminalStore.getState().setProgramRunning(false);
             useTerminalStore.getState().addLine("^C");
           }
@@ -460,7 +464,7 @@ export default function TerminalApp({ windowProps }: { windowProps: WindowType }
           return;
         case "l": // Clear screen
           e.preventDefault();
-          useTerminalStore.getState().lines = [];
+          useTerminalStore.getState().createProgramContext().clear();
           return;
       }
     }
