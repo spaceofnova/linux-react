@@ -15,7 +15,13 @@ export default defineConfig({
       target: "esnext",
     },
   },
-  plugins: [react()],
+  plugins: [
+    react({
+      babel: {
+        plugins: [["babel-plugin-react-compiler", { target: "19" }]],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

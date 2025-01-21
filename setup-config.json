@@ -1,0 +1,165 @@
+{
+  "version": "1.0.0",
+  "branding": {
+    "title": "Linux React Installer",
+    "welcomeMessage": "Welcome to Linux React! This wizard will guide you through the installation process."
+  },
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Welcome",
+      "description": "Start the installation process",
+      "order": 1,
+      "required": true
+    },
+    {
+      "id": "filesystem",
+      "title": "Drive Setup",
+      "description": "Configure system drive",
+      "order": 2,
+      "required": true
+    },
+    {
+      "id": "options",
+      "title": "Choose Apps",
+      "description": "Select additional applications",
+      "order": 3,
+      "required": true
+    },
+    {
+      "id": "install",
+      "title": "Installing",
+      "description": "Installing system components",
+      "order": 4,
+      "required": true
+    },
+    {
+      "id": "finish",
+      "title": "Complete",
+      "description": "Finish installation",
+      "order": 5,
+      "required": true
+    }
+  ],
+  "pages": [
+    {
+      "id": "welcome",
+      "type": "welcome",
+      "title": "Welcome to Linux React",
+      "description": "This wizard will guide you through the installation process.",
+      "showExistingDataWarning": true,
+      "showConfigLoader": true,
+      "actions": {
+        "primary": {
+          "text": "Next",
+          "action": "next"
+        },
+        "secondary": {
+          "text": "Exit",
+          "action": "exit"
+        }
+      }
+    }
+  ],
+  "systemRequirements": {
+    "storage": "50MB",
+    "memory": "128MB",
+    "requiredFeatures": ["localStorage", "indexedDB"]
+  },
+  "filesystem": {
+    "directories": [
+      { "path": "/", "required": true },
+      { "path": "/home", "required": true },
+      { "path": "/apps", "required": true },
+      { "path": "/system", "required": true }
+    ],
+    "files": [
+      {
+        "path": "/system/version",
+        "content": "1.0.0",
+        "required": true
+      }
+    ]
+  },
+  "recommendedApps": [
+    {
+      "id": "calculator",
+      "name": "Calculator",
+      "description": "Basic calculator app",
+      "default": true,
+      "size": "1.2MB",
+      "installOrder": 1,
+      "directories": [
+        { "path": "/apps/calculator", "required": true }
+      ]
+    },
+    {
+      "id": "terminal",
+      "name": "Terminal",
+      "description": "Command line interface",
+      "default": false,
+      "required": true,
+      "size": "2.1MB",
+      "installOrder": 0,
+      "dependencies": ["system-utils"]
+    },
+    {
+      "id": "notepad",
+      "name": "Notepad",
+      "description": "Simple text editor",
+      "default": true,
+      "size": "0.8MB",
+      "installOrder": 2
+    },
+    {
+      "id": "browser",
+      "name": "Web Browser",
+      "description": "Simple web browser",
+      "default": false,
+      "size": "5.4MB",
+      "installOrder": 3
+    }
+  ],
+  "defaultPreferences": {
+    "theme": "light",
+    "language": "en",
+    "animations": true,
+    "autoUpdate": true
+  },
+  "errorMessages": {
+    "fsError": "Failed to initialize filesystem",
+    "networkError": "Unable to download required components",
+    "installError": "Installation failed",
+    "generalError": "An unexpected error occurred"
+  },
+  "installationSteps": [
+    {
+      "id": "fs-init",
+      "title": "Setting up Filesystem",
+      "description": "Initializing system directories",
+      "order": 1,
+      "timeout": 1000
+    },
+    {
+      "id": "core-install",
+      "title": "Installing Core Components",
+      "description": "Setting up essential system files",
+      "order": 2,
+      "timeout": 2000
+    },
+    {
+      "id": "app-install",
+      "title": "Installing Applications",
+      "description": "Installing selected applications",
+      "order": 3,
+      "timeout": 1500
+    },
+    {
+      "id": "user-setup",
+      "title": "Configuring User Settings",
+      "description": "Setting up user preferences",
+      "order": 4,
+      "timeout": 1000
+    }
+  ]
+} 

@@ -14,7 +14,7 @@ const AppIcon = ({ app }: { app: AppType }) => {
   const getIconData = () => {
     try {
       const iconData = fs.readFileSync(
-        app.icon ?? "/root/assets/" + app.id + ".svg",
+        app.icon ?? "/system/assets/ui/" + app.id + ".svg",
         "utf-8"
       );
 
@@ -35,10 +35,6 @@ const AppIcon = ({ app }: { app: AppType }) => {
   );
 };
 
-interface IconSize {
-  iconSize: "mini" | "small" | "medium" | "large";
-}
-
 const Dock = () => {
   const prefrences = usePrefrencesStore((state) => state.prefrences);
   const apps = useAppStore.getState().getApps();
@@ -47,7 +43,13 @@ const Dock = () => {
       <View
         className={cn(
           "bg-background fixed bottom-2 left-1/2 -translate-x-1/2 flex gap-2 items-center border-t p-2",
-          "h-12"
+          prefrences.dock.iconSize === "mini"
+            ? "h-12"
+            : prefrences.dock.iconSize === "small"
+            ? "h-14"
+            : prefrences.dock.iconSize === "medium"
+            ? "h-16"
+            : "h-20"
         )}
       >
         {apps.map((app, index) => (

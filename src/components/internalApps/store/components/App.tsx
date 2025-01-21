@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useDownload } from "@/functions/unix";
 import { Progress } from "@/components/ui/progress";
 import { Loader2Icon } from "lucide-react";
+import { ASSETS_DOWNLOAD_URL } from "@/lib/constants";
 
 const App = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const App = () => {
   const queryClient = useQueryClient();
   const { status, error, progress, startDownload } = useDownload();
 
-  const DOWNLOAD_URL = `https://raw.githubusercontent.com/spaceofnova/linux-react-data-store/main/download.json?token=$(${Date.now()} +%s)`;
+  
 
   useEffect(() => {
     if (search.length > 0) {
@@ -49,7 +50,7 @@ const App = () => {
       </div> */}
       <Button
         disabled={status === "inProgress"}
-        onClick={() => startDownload(DOWNLOAD_URL)}
+        onClick={() => startDownload(ASSETS_DOWNLOAD_URL)}
       >
         Download System Icons
         {status === "inProgress" && <Loader2Icon className="animate-spin" />}

@@ -63,20 +63,22 @@ export type PrefrencePath = {
   [S in PrefrenceSection]: `${S}.${GetPrefrencePaths<Config[S] & SettingSection>}`;
 }[PrefrenceSection];
 
-type InferSettingValue<T> = T extends { type: "boolean" }
-  ? boolean
-  : T extends { type: "string" }
-    ? string
-    : T extends { type: "number" }
-      ? number
-      : T extends { type: "select"; options: readonly (infer O)[] }
-        ? O
-        : never;
-
-export type PrefrenceValues = {
-  [K in PrefrenceSection]: {
-    [P in GetPrefrencePaths<Config[K] & SettingSection>]?: InferSettingValue<
-      Extract<Config[K]["settings"][number], { prefrence: P }>
-    >;
+export interface PrefrenceValues {
+  display: {
+    screenZoom: string;
   };
-};
+  dock: {
+    autoHideDock: boolean;
+    iconSize: string;
+  };
+  developer: {
+    debugMode: boolean;
+  };
+  appearance: {
+    userWallpaper: string;
+    blurEffects: boolean;
+  };
+  hidden: {
+    showWelcomeApp: boolean;
+  };
+}

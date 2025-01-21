@@ -3,7 +3,7 @@ import { fs } from "@zenfs/core";
 import { PrefrenceValues } from "@/types/settings";
 
 const CONFIG_PATH = "/home/user.json";
-const DEFAULT_PREFRENCES: PrefrenceValues = {
+export const DEFAULT_PREFRENCES: PrefrenceValues = {
   display: {
     screenZoom: "100%",
   },
@@ -15,12 +15,12 @@ const DEFAULT_PREFRENCES: PrefrenceValues = {
     debugMode: false,
   },
   appearance: {
-    userWallpaper: "/home/wallpaper.jpg",
+    userWallpaper: "/system/assets/wallpaper.jpg",
     blurEffects: true,
   },
   hidden: {
     showWelcomeApp: true,
-  },
+  }
 };
 
 const configFileStorage = {
