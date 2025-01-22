@@ -1,14 +1,14 @@
 // Components
-import { Desktop } from "./components/Desktop";
-import { Notifications } from "@/components/NotificationDisplay";
-import Setup from "@/components/Setup";
-import { ThemeProvider } from "@/stores/themestore";
-import { WindowManager } from "@/components/WMDisplay";
+import { Desktop } from "desktop/index";
+import { Notifications } from "shared/components/NotificationDisplay";
+import Setup from "installer/index";
+import { ThemeProvider } from "shared/hooks/themestore";
+import { WindowManager } from "desktop/components/windows/WMDisplay";
 
 // Functions
-import { setupWindowEventHandlers } from "@/functions/dispatcher";
-import { SetupAppsWatcher, useAppStore } from "@/stores/appstore";
-import { LoadPrefrences, usePrefrencesStore } from "@/stores/prefrencesStore";
+import { setupWindowEventHandlers } from "shared/utils/dispatcher";
+import { SetupAppsWatcher, useAppStore } from "shared/hooks/appstore";
+import { LoadPrefrences, usePrefrencesStore } from "shared/hooks/prefrencesStore";
 
 // Types
 import { configure } from "@zenfs/core";
@@ -16,9 +16,9 @@ import { IndexedDB } from "@zenfs/dom";
 import { createRoot } from "react-dom/client";
 
 // Other
-import "@/index.css";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { MainErrorFault } from "./components/bigError";
+import "./index.css";
+import { ErrorBoundary } from "shared/components/ErrorBoundary";
+import { MainErrorFault } from "shared/components/bigError";
 
 await configure({
   mounts: {
@@ -44,7 +44,7 @@ const functions = () => {
   };
   LoadPrefrences();
   SetupAppsWatcher();
-  setupWindowEventHandlers();
+  // setupWindowEventHandlers();
   showWelcomeApp();
 };
 

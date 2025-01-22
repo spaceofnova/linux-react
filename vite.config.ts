@@ -17,6 +17,7 @@ export default defineConfig({
   },
   plugins: [
     react({
+      // @ts-ignore
       babel: {
         plugins: [["babel-plugin-react-compiler", { target: "19" }]],
       },
@@ -24,7 +25,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "src": path.resolve(__dirname, "./src"),
+      "apps": path.resolve(__dirname, "./src/apps"),
+      "desktop": path.resolve(__dirname, "./src/desktop"),
+      "installer": path.resolve(__dirname, "./src/installer"),
+      "shared": path.resolve(__dirname, "./src/shared"),
+      "system": path.resolve(__dirname, "./src/system")
     },
   },
 });

@@ -6,9 +6,14 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "src/*": ["./src/*"],
+      "apps/*": ["./src/apps/*"],
+      "desktop/*": ["./src/desktop/*"],
+      "installer/*": ["./src/installer/*"],
+      "shared/*": ["./src/shared/*"],
+      "system/*": ["./src/system/*"]
     },
 
     /* Bundler mode */
