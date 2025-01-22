@@ -4,11 +4,14 @@ import { Notifications } from "shared/components/NotificationDisplay";
 import Setup from "installer/index";
 import { ThemeProvider } from "shared/hooks/themestore";
 import { WindowManager } from "desktop/components/windows/WMDisplay";
+import CorruptError from "shared/components/CorruptError";
 
 // Functions
-import { setupWindowEventHandlers } from "shared/utils/dispatcher";
 import { SetupAppsWatcher, useAppStore } from "shared/hooks/appstore";
-import { LoadPrefrences, usePrefrencesStore } from "shared/hooks/prefrencesStore";
+import {
+  LoadPrefrences,
+  usePrefrencesStore,
+} from "shared/hooks/prefrencesStore";
 
 // Types
 import { configure } from "@zenfs/core";
@@ -19,6 +22,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { MainErrorFault } from "shared/components/bigError";
+import { validateFileStructure } from "./shared/utils/corruption";
 
 await configure({
   mounts: {
@@ -29,6 +33,9 @@ await configure({
 const setupLock = localStorage.getItem("setuplock");
 
 const functions = () => {
+  if (!validateFileStructure()) {
+    return;
+  }
   if (!setupLock) return;
 
   const showWelcomeApp = () => {
@@ -42,6 +49,7 @@ const functions = () => {
       }, 700);
     }
   };
+
   LoadPrefrences();
   SetupAppsWatcher();
   // setupWindowEventHandlers();
@@ -52,16 +60,18 @@ functions();
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider>
-    <div>
-      {setupLock === null ? (
-        <Setup />
-      ) : (
-        <ErrorBoundary errorComponent={MainErrorFault}>
+    {setupLock === null ? (
+      <Setup />
+    ) : validateFileStructure() ? (
+      <ErrorBoundary errorComponent={MainErrorFault}>
+        <div>
           <Desktop />
           <WindowManager />
           <Notifications />
-        </ErrorBoundary>
-      )}
-    </div>
+        </div>
+      </ErrorBoundary>
+    ) : (
+      <CorruptError />
+    )}
   </ThemeProvider>
 );
