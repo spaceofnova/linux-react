@@ -11,6 +11,8 @@ import { ErrorBoundary } from "shared/components/ErrorBoundary";
 
 const AppIcon = ({ app }: { app: AppType }) => {
   const launchApp = useAppStore.getState().launchApp;
+  const prefrences = usePrefrencesStore((state) => state.prefrences);
+
   const getIconData = () => {
     try {
       const iconData = fs.readFileSync(
@@ -29,7 +31,16 @@ const AppIcon = ({ app }: { app: AppType }) => {
   return (
     <div
       onClick={() => launchApp(app.id)}
-      className="h-full aspect-square flex items-center justify-center p-1 rounded-sm hover:scale-[1.25] transition-all duration-200 ease-in-out"
+      className={cn(
+        "aspect-square flex items-center justify-center p-1 rounded-sm hover:scale-[1.25] transition-all duration-200 ease-in-out",
+        prefrences.dock.iconSize === "mini"
+          ? "h-8"
+          : prefrences.dock.iconSize === "small"
+          ? "h-10"
+          : prefrences.dock.iconSize === "medium"
+          ? "h-12"
+          : "h-14"
+      )}
       dangerouslySetInnerHTML={{ __html: getIconData() }}
     />
   );
