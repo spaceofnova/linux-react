@@ -5,9 +5,7 @@ import fs from "@zenfs/core";
 import { toast } from "sonner";
 import { useWindowStore } from "./windowStore";
 import { internalApps } from "apps/index";
-
-const appsDirectory = "/apps";
-
+import { APPS_DIRECTORY } from "shared/constants";
 // Helper function to combine internal and local apps
 const getApps = (localApps: AppType[], internalApps: AppType[]): AppType[] => {
   return [...internalApps, ...localApps];
@@ -16,25 +14,42 @@ const getApps = (localApps: AppType[], internalApps: AppType[]): AppType[] => {
 type AppStoreState = {
   localApps: AppType[];
   internalApps: AppType[];
+  enabledInternalApps: string[];
 };
 
 type AppStoreActions = {
   setLocalApps: (apps: AppType[]) => void;
   addLocalApp: (app: AppType) => boolean;
+  enableInternalApp: (appID: string) => void;
+  disableInternalApp: (appID: string) => void;
   removeLocalApp: (appID: string) => AppType[];
   launchApp: (appID: string) => Promise<void>;
   getApps: () => AppType[];
   launchDeepLink: (deepLink: string) => Promise<void>;
 };
-
-export const useAppStore = create<AppStoreState & AppStoreActions>()(
+ 
+export const useAppStore = create<AppStoreState & AppStoreActions>()( 
   persist(
     (set, get) => ({
       localApps: [],
       internalApps: [...internalApps],
+      enabledInternalApps: ["com.system.terminal", "com.system.store", "com.system.files", "com.system.settings", "com.system.welcome"],
 
       // Actions
-      getApps: () => getApps(get().localApps, get().internalApps),
+      getApps: () => {
+        const enabledApps = get().enabledInternalApps
+          .map(id => get().internalApps.find(app => app.id === id))
+          .filter((app): app is AppType => app !== undefined);
+        return getApps(get().localApps, enabledApps);
+      },
+
+      enableInternalApp: (appID: string) => {
+        set({ enabledInternalApps: [...get().enabledInternalApps, appID] });
+      },
+
+      disableInternalApp: (appID: string) => {
+        set({ enabledInternalApps: get().enabledInternalApps.filter((id) => id !== appID) });
+      },
 
       setLocalApps: (apps) => set({ localApps: apps }),
 
@@ -48,7 +63,7 @@ export const useAppStore = create<AppStoreState & AppStoreActions>()(
 
       removeLocalApp: (appID): AppType[] => {
         const newApps = get().localApps.filter((app) => app.id !== appID);
-        fs.rmSync(`${appsDirectory}/${appID}`, {
+        fs.rmSync(`${APPS_DIRECTORY}/${appID}`, {
           recursive: true,
           force: true,
         });
@@ -137,17 +152,17 @@ export const useAppStore = create<AppStoreState & AppStoreActions>()(
     {
       name: "apps-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ localApps: state.localApps }), // Only persist localApps
+      partialize: (state) => ({ localApps: state.localApps, enabledInternalApps: state.enabledInternalApps }), // Only persist neccesary data
     }
   )
 );
 
 // App registration and watching functions
 export const registerApps = async () => {
-  const files = fs.readdirSync(appsDirectory);
+  const files = fs.readdirSync(APPS_DIRECTORY);
 
   for (const dir of files) {
-    const appPath = `${appsDirectory}/${dir}`;
+    const appPath = `${APPS_DIRECTORY}/${dir}`;
     const metadataPath = `${appPath}/metadata.json`;
     const indexPath = `${appPath}/index.html`;
 
@@ -188,7 +203,7 @@ export const registerApps = async () => {
 export const SetupAppsWatcher = () => {
   checkAppIntegrity();
 
-  fs.watch(appsDirectory, (event) => {
+  fs.watch(APPS_DIRECTORY, (event) => {
     if (event === "change") {
       checkAppIntegrity();
       registerApps();
@@ -197,13 +212,13 @@ export const SetupAppsWatcher = () => {
 };
 
 export const checkAppIntegrity = () => {
-  const files = fs.readdirSync(appsDirectory);
+  const files = fs.readdirSync(APPS_DIRECTORY);
 
   const localApps = useAppStore.getState().localApps;
 
   // Remove invalid app directories
   files.forEach((file) => {
-    const appPath = `${appsDirectory}/${file}`;
+    const appPath = `${APPS_DIRECTORY}/${file}`;
     const indexPath = `${appPath}/index.html`;
     const metadataPath = `${appPath}/metadata.json`;
 
@@ -218,7 +233,7 @@ export const checkAppIntegrity = () => {
 
   // Remove apps from store that don't exist on disk
   localApps.forEach((app) => {
-    const appPath = `${appsDirectory}/${app.id}`;
+    const appPath = `${APPS_DIRECTORY}/${app.id}`;
     const indexPath = `${appPath}/index.html`;
 
     if (!fs.existsSync(appPath) || !fs.existsSync(indexPath)) {

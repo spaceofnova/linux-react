@@ -18,6 +18,7 @@ import axios from "axios";
 import fs from "@zenfs/core";
 import path from "path-browserify";
 import { useState } from "react";
+import JSZip from 'jszip';
 
 // Helper function to extract URLs from HTML content
 const extractUrls = (html: string, baseUrl: string): string[] => {
@@ -238,7 +239,19 @@ export const useDownload = () => {
     currentDirectory: ''
   });
 
-  const startDownload = async (jsonUrl: string): Promise<void> => {
+  const startDownload = async ({
+    url,
+    isZip = false,
+    zipOptions = {
+      outputDir: '.'  // Default to current directory
+    }
+  }: {
+    url: string;
+    isZip?: boolean;
+    zipOptions?: {
+      outputDir?: string;
+    }
+  }): Promise<void> => {
     try {
       setStatus('inProgress');
       setProgress({
@@ -260,9 +273,42 @@ export const useDownload = () => {
         });
       };
 
-      await massDownload(jsonUrl, (completed, total, currentFile, currentDirectory) => {
-        onProgress(completed, total, currentFile, currentDirectory);
-      });
+      if (isZip) {
+        const response = await axios.get(url, {
+          responseType: 'arraybuffer',
+          onDownloadProgress: (progressEvent) => {
+            onProgress(progressEvent.loaded, progressEvent.total || progressEvent.loaded, 'Downloading zip...', '');
+          }
+        });
+
+        // Load zip contents
+        const zip = await new JSZip().loadAsync(response.data);
+        const totalFiles = Object.keys(zip.files).length;
+        let completed = 0;
+
+        // Extract files with proper typing
+        for (const [filename, zipFile] of Object.entries(zip.files)) {
+          if (!zipFile.dir) {
+            const content = await zipFile.async('uint8array');
+            // Use the provided output directory
+            const fullPath = path.join(zipOptions.outputDir || '.', filename);
+            const dir = path.dirname(fullPath);
+            
+            // Create directory if it doesn't exist
+            await fs.promises.mkdir(dir, { recursive: true });
+            
+            // Write file to the correct location
+            await fs.promises.writeFile(fullPath, content);
+            completed++;
+            onProgress(completed, totalFiles, filename, dir);
+          }
+        }
+      } else {
+        // Handle regular JSON manifest downloads
+        await massDownload(url, (completed, total, currentFile, currentDirectory) => {
+          onProgress(completed, total, currentFile, currentDirectory);
+        });
+      }
       
       setStatus('finished');
     } catch (err) {

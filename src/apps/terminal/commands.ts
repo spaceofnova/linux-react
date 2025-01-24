@@ -88,7 +88,7 @@ registry.register({
     terminal.write('\x1b[2J'); // Clear screen
     
     const DONUT_WIDTH = 80;
-    const DONUT_HEIGHT = showDebug ? 18 : 22; // Reserve space for debug info
+    const DONUT_HEIGHT = showDebug ? 18 : 28; // Reserve space for debug info
     let fps = 0;
 
     const renderTooSmallMessage = (width: number, height: number) => {

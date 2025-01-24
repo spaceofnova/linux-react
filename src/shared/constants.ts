@@ -2,8 +2,6 @@ import { showFilePicker } from "shared/components/FilePicker";
 import { useNotificationStore } from "shared/hooks/notifications";
 import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
 
-export const ASSETS_DOWNLOAD_URL = `https://raw.githubusercontent.com/spaceofnova/linux-react-data-store/main/download.json?token=$(${Date.now()} +%s)`;
-
 export const settingsConfig = {
   appearance: {
     description: "Customize the look and feel of your desktop",
@@ -117,3 +115,5 @@ export const settingsConfig = {
 } as const;
 
 export const UI_ASSETS_URL = 'https://cdn.jsdelivr.net/gh/spaceofnova/linux-react-data-store@main/ui-assets.zip';
+
+export const APPS_DIRECTORY = '/apps';
