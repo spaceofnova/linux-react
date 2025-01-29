@@ -47,8 +47,8 @@ export const internalApps: AppType[] = [
     windowOptions: {
       title: "Welcome",
       position: {
-        x: window.innerWidth / 2 - 150,
-        y: window.innerHeight / 2 - 200,
+        x: Math.floor(window.innerWidth / 2 - 150),
+        y: Math.floor(window.innerHeight / 2 - 200),
       },
       size: { width: 300, height: 400 },
       ReactElement: WelcomeApp,
