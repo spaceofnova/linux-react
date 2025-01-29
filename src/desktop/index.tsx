@@ -109,6 +109,8 @@ export const Desktop = () => {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
+      if (e.target !== canvas) return;
+      
       if (select.isSelecting) return;
 
       setSelect({
@@ -141,27 +143,43 @@ export const Desktop = () => {
   }, [select]);
   return (
     <>
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div ref={containerRef} className="h-full w-full fixed bg-black">
-          <canvas
-            ref={canvasRef}
-            className="h-full w-full fixed z-0 transition-all duration-500"
-            style={{
-              filter: wallpaperReady ? "blur(0px)" : "blur(12px)",
-              opacity: wallpaperReady ? 1 : 0,
-            }}
-          />
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem className="cursor-pointer" onClick={() => useAppStore.getState().launchDeepLink("settings:appearance")}>
-          <p>Change Wallpaper</p>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-
-    <Dock />
+      {/* {select.isSelecting && (
+        <div
+          style={{
+            position: "fixed",
+            left: select.width < 0 ? select.x + select.width : select.x,
+            top: select.height < 0 ? select.y + select.height : select.y,
+            width: Math.abs(select.width),
+            height: Math.abs(select.height),
+            border: "1px solid white/10",
+            backgroundColor: "rgba(153, 209, 255, 0.3)",
+            zIndex: 10,
+            pointerEvents: "none",
+            boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
+          }}
+        />
+      )} */}
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div ref={containerRef} className="h-full w-full fixed bg-black">
+            <canvas
+              ref={canvasRef}
+              className="h-full w-full fixed z-0 transition-all duration-500"
+            />
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem
+            className="cursor-pointer"
+            onClick={() =>
+              useAppStore.getState().launchDeepLink("settings:appearance")
+            }
+          >
+            <p>Change Wallpaper</p>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      <Dock />
     </>
   );
 };

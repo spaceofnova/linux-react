@@ -115,6 +115,8 @@ export interface NotificationType {
     onClick: () => void;
   };
   store?: boolean;
+  startTime?: number;
+  remainingDuration?: number;
 }
 
 type NotificationInput = Omit<NotificationType, 'id'>;

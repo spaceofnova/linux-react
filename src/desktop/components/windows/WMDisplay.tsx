@@ -6,22 +6,25 @@ import { useEffect, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 export const WindowManager = () => {
-  const { windows, activeWindowId, focusWindow, closeWindow } =
-    useWindowStore();
+  // Get all window data directly
+  const windows = useWindowStore((state) => state.windows);
+  const activeWindowId = useWindowStore((state) => state.activeWindowId);
+  const { focusWindow, closeWindow } = useWindowStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const prefrences = usePrefrencesStore((state) => state.prefrences);
   const updatePrefrence = usePrefrencesStore((state) => state.updatePrefrence);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
-      if (containerRef.current?.contains(e.target as Node) === false) {
+      // Only run if there's actually a window focused
+      if (activeWindowId !== null && containerRef.current?.contains(e.target as Node) === false) {
         focusWindow(null);
       }
     };
 
     document.addEventListener("mousedown", handleMouseDown);
     return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [focusWindow]);
+  }, [focusWindow, activeWindowId]);
 
   useHotkeys("ctrl+q, command+q", (e) => {
     e.preventDefault();
@@ -39,13 +42,6 @@ export const WindowManager = () => {
           <p>Debug Mode Enabled!</p>
           <pre>Window Count: {windows.length}</pre>
           <pre>{activeWindowId}</pre>
-          <pre>
-            {JSON.stringify(
-              windows.find((w) => w.id === activeWindowId),
-              null,
-              2
-            )}
-          </pre>
         </div>
       )}
       <AnimatePresence>

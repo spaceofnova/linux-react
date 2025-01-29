@@ -1,3 +1,4 @@
+import MillionLint from "@million/lint";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -16,6 +17,10 @@ export default defineConfig({
     },
   },
   plugins: [
+    MillionLint.vite({
+      enabled: true,
+    }),
+    // @ts-ignore
     react({
       // @ts-ignore
       babel: {
@@ -25,12 +30,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "src": path.resolve(__dirname, "./src"),
-      "apps": path.resolve(__dirname, "./src/apps"),
-      "desktop": path.resolve(__dirname, "./src/desktop"),
-      "installer": path.resolve(__dirname, "./src/installer"),
-      "shared": path.resolve(__dirname, "./src/shared"),
-      "system": path.resolve(__dirname, "./src/system")
+      src: path.resolve(__dirname, "./src"),
+      apps: path.resolve(__dirname, "./src/apps"),
+      desktop: path.resolve(__dirname, "./src/desktop"),
+      installer: path.resolve(__dirname, "./src/installer"),
+      shared: path.resolve(__dirname, "./src/shared"),
+      system: path.resolve(__dirname, "./src/system"),
     },
   },
 });

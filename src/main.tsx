@@ -1,6 +1,6 @@
 // Components
 import { Desktop } from "desktop/index";
-import { Notifications } from "shared/components/NotificationDisplay";
+import { Notifications } from "desktop/components/notification";
 import Setup from "installer/index";
 import { ThemeProvider } from "shared/hooks/themestore";
 import { WindowManager } from "desktop/components/windows/WMDisplay";
