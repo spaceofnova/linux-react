@@ -1,9 +1,3 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "src/shared/components/ui/card";
 import { useNotificationStore } from "src/shared/hooks/notifications";
 import { Notif } from "./notif";
 import { NotificationType } from "src/shared/types/storeTypes";
@@ -27,7 +21,7 @@ const RealNotifications = () => {
   return (
     <div className={CONTAINER_CLASS}>
       <AnimatePresence initial={false}>
-        {activeNotifications.map((notif) => (
+        {activeNotifications.map((notif: NotificationType) => (
           <Notif key={notif.id} id={notif.id} notification={notif} />
         ))}
       </AnimatePresence>

@@ -23,6 +23,7 @@ import "./index.css";
 import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { MainErrorFault } from "shared/components/bigError";
 import { validateFileStructure } from "./shared/utils/corruption";
+import { LazyMotion, domAnimation } from "motion/react";
 
 await configure({
   mounts: {
@@ -64,11 +65,11 @@ createRoot(document.getElementById("root")!).render(
       <Setup />
     ) : validateFileStructure() ? (
       <ErrorBoundary errorComponent={MainErrorFault}>
-        <div>
+        <LazyMotion features={domAnimation}>
           <Desktop />
           <WindowManager />
           <Notifications />
-        </div>
+        </LazyMotion>
       </ErrorBoundary>
     ) : (
       <CorruptError />

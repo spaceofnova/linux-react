@@ -1,19 +1,13 @@
 import { useWindowStore } from "shared/hooks/windowStore";
 import { WindowType } from "shared/types/storeTypes";
 import { Rnd } from "react-rnd";
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
-} from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Maximize2Icon, ShrinkIcon, X } from "lucide-react";
 import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { Button } from "shared/components/ui/button";
 import { useAppStore } from "shared/hooks/appstore";
-import fs from "@zenfs/core";
 import { MotionView } from "shared/components/ui/View";
+import { readFileSync } from "@zenfs/core";
 
 type WindowProps = WindowType & {
   isFocused?: boolean;
@@ -51,10 +45,7 @@ export const Window = React.memo<WindowProps>((props) => {
         const apps = useAppStore.getState().getApps();
         const folderPath = apps.find((app) => app.id === id)?.folderPath;
         if (folderPath) {
-          const html = fs.readFileSync(
-            `${folderPath}/${props.filePath}`,
-            "utf-8"
-          );
+          const html = readFileSync(`${folderPath}/${props.filePath}`, "utf-8");
           setIframeDoc(html);
         }
       } catch (e) {
@@ -123,9 +114,9 @@ export const Window = React.memo<WindowProps>((props) => {
 
   const variants = useMemo(
     () => ({
-      initial: { opacity: 0, scale: 0.8 },
-      animate: { opacity: 1, scale: 1 },
-      exit: { opacity: 0, scale: 0.8 },
+      initial: { opacity: 0, scale: 0.8, filter: "blur(0px)" },
+      animate: { opacity: 1, scale: 1, filter: "blur(0px)" }, 
+      exit: { opacity: 0, scale: 0.8, filter: "blur(0px)" },
       transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
     }),
     []

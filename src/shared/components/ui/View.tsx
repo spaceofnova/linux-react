@@ -1,7 +1,7 @@
 import { forwardRef, HTMLAttributes } from "react";
 import { cn } from "shared/utils/cn";
 import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
-import { motion } from "motion/react";
+import * as m from "motion/react-m"
 
 interface ViewProps extends HTMLAttributes<HTMLDivElement> {
   rounded?: boolean;
@@ -31,7 +31,7 @@ const View = forwardRef<HTMLDivElement, ViewProps>(
 
 View.displayName = "View";
 
-const MotionView = motion.create(View);
+const MotionView = m.create(View);
 
 export { View, MotionView };
 export type { ViewProps };
