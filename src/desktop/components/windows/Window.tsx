@@ -1,13 +1,21 @@
 import { useWindowStore } from "shared/hooks/windowStore";
 import { WindowType } from "shared/types/storeTypes";
 import { Rnd } from "react-rnd";
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Maximize2Icon, ShrinkIcon, X } from "lucide-react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import { Maximize2Icon, MinusIcon, X } from "lucide-react";
 import { ErrorBoundary } from "shared/components/ErrorBoundary";
-import { Button } from "shared/components/ui/button";
 import { useAppStore } from "shared/hooks/appstore";
 import { MotionView } from "shared/components/ui/View";
 import { readFileSync } from "@zenfs/core";
+import { AppIcon } from "shared/components/AppIcon";
+import { cn } from "shared/utils/cn";
+import * as m from "motion/react-m";
 
 type WindowProps = WindowType & {
   isFocused?: boolean;
@@ -26,6 +34,7 @@ const windowActions = {
     useWindowStore.getState().moveWindow(id, position, relative),
   resize: (id: string, size: any, position: any) =>
     useWindowStore.getState().resizeWindow(id, size, position),
+  minimize: (id: string) => useWindowStore.getState().minimizeWindow(id),
 };
 
 export const Window = React.memo<WindowProps>((props) => {
@@ -54,47 +63,57 @@ export const Window = React.memo<WindowProps>((props) => {
     }
   }, [id, props.filePath, props.ReactElement]);
 
+  const handleMaximize = useCallback(() => {
+    if (props.isMaximized) {
+      windowActions.restore(id);
+    } else {
+      windowActions.maximize(id);
+    }
+  }, [id, props.isMaximized]);
+
+  const handleClose = useCallback(() => {
+    windowActions.close(id);
+  }, [id]);
+
   const renderControls = () => (
-    <div className="h-8 w-full px-2 inline-flex justify-between items-center border-b titlebar">
-      <p>{title}</p>
-      <div className="inline-flex items-center gap-2">
+    <div className="h-7 w-full inline-flex justify-between items-center bg-card titlebar">
+      <div className="inline-flex items-center gap-1.5 pl-1.5">
+        <p className="text-xs font-medium">{title}</p>
+      </div>
+      <div className="flex items-center h-full">
+        <button
+          className="h-7 w-11 flex items-center justify-center hover:bg-white/10"
+          onClick={() => windowActions.minimize(id)}
+          title="Minimize"
+        >
+          <MinusIcon className="h-3.5 w-3.5" />
+        </button>
         {!props.noResize && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
+          <button
+            className="h-7 w-11 flex items-center justify-center hover:bg-white/10"
+            onClick={handleMaximize}
             title={props.isMaximized ? "Restore" : "Maximize"}
-            onClick={() =>
-              !props.isMaximized
-                ? windowActions.maximize(id)
-                : windowActions.restore(id)
-            }
           >
-            {!props.isMaximized ? (
-              <Maximize2Icon size={6} />
-            ) : (
-              <ShrinkIcon size={6} />
-            )}
-          </Button>
+            <Maximize2Icon className="h-3.5 w-3.5" />
+          </button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={() => windowActions.close(id)}
+        <button
+          className="h-7 w-11 flex items-center justify-center hover:bg-destructive"
+          onClick={handleClose}
           title="Close"
         >
-          <X size={6} />
-        </Button>
+          <X className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
 
   const renderContent = () => (
     <div
-      className={`w-full ${
-        props.noControls ? "h-full" : "h-[calc(100%-2rem)]"
-      } overflow-scroll`}
+      className={cn(
+        "w-full bg-background",
+        props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]"
+      )}
     >
       {props.ReactElement ? (
         <props.ReactElement windowProps={props} />
@@ -105,35 +124,27 @@ export const Window = React.memo<WindowProps>((props) => {
           className="w-full h-full"
         />
       ) : (
-        <div className="w-full h-full bg-background">
+        <div className="w-full h-full flex items-center justify-center">
           <p>No content found</p>
         </div>
       )}
     </div>
   );
 
-  const variants = useMemo(
-    () => ({
-      initial: { opacity: 0, scale: 0.8, filter: "blur(0px)" },
-      animate: { opacity: 1, scale: 1, filter: "blur(0px)" }, 
-      exit: { opacity: 0, scale: 0.8, filter: "blur(0px)" },
-      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
-    }),
-    []
-  );
-
   return (
     <Rnd
-      minWidth={200}
-      minHeight={200}
+      minWidth={280}
+      minHeight={120}
       disableDragging={props.isMaximized}
       onDragStart={() => {
         isDraggingRef.current = true;
       }}
-      style={{ zIndex: props.zIndex }}
+      style={{
+        zIndex: props.zIndex,
+      }}
       size={{
-        width: props.size?.width ?? 200,
-        height: props.size?.height ?? 200,
+        width: props.size?.width ?? 800,
+        height: props.size?.height ?? 500,
       }}
       position={props.position}
       onDragStop={(_e, d) => {
@@ -152,19 +163,22 @@ export const Window = React.memo<WindowProps>((props) => {
       }}
       enableResizing={!props.noResize}
       onMouseDown={() => windowActions.focus(id)}
-      dragHandleClassName={"titlebar"}
+      dragHandleClassName="titlebar"
+      className="overflow-hidden"
     >
       <MotionView
-        className="w-full h-full"
-        variants={variants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={variants.transition}
+        className={cn(
+          "w-full h-full flex flex-col border",
+          props.isFocused ? undefined : "opacity-90"
+        )}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
       >
         {!props.noControls && renderControls()}
         <ErrorBoundary errorMessage="An error occurred while rendering the window.">
-          {useMemo(() => renderContent(), [props.ReactElement, iframeDoc])}
+          {renderContent()}
         </ErrorBoundary>
       </MotionView>
     </Rnd>

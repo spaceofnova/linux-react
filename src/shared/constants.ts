@@ -10,6 +10,7 @@ export const settingsConfig = {
         type: "string" as const,
         label: "Wallpaper URL",
         prefrence: "userWallpaper",
+        defaultValue: "/system/assets/wallpaper.jpg",
       },
       {
         type: "button" as const,
@@ -28,28 +29,18 @@ export const settingsConfig = {
         type: "boolean" as const,
         label: "Transparency Effects",
         prefrence: "blurEffects",
+        defaultValue: true,
       },
     ],
   },
-  dock: {
-    description: "Customize the look and feel of your dock",
+  taskbar: {
+    description: "Customize the look and feel of your taskbar",
     settings: [
       {
         type: "boolean" as const,
-        label: "Auto Hide Dock",
-        prefrence: "autoHideDock",
-      },
-      {
-        type: "select" as const,
-        label: "Icon Size",
-        prefrence: "iconSize",
-        options: ["mini", "small", "medium", "large"] as const,
-        valueMap: {
-          mini: 12,
-          small: 16,
-          medium: 24,
-          large: 32,
-        },
+        label: "Small Icons",
+        prefrence: "smallIcons",
+        defaultValue: false,
       },
     ],
   },
@@ -61,6 +52,7 @@ export const settingsConfig = {
         label: "Screen Zoom",
         prefrence: "screenZoom",
         options: ["90%", "100%", "125%", "150%", "175%", "200%"] as const,
+        defaultValue: "100%",
         valueMap: {
           "90%": 0.9,
           "100%": 1,
@@ -86,18 +78,7 @@ export const settingsConfig = {
         type: "boolean" as const,
         label: "Debug Mode",
         prefrence: "debugMode",
-      },
-      {
-        type: "button" as const,
-        label: "Spawn Test Notification",
-        secondaryLabel: "Spawn",
-        onClick: () => {
-          useNotificationStore.getState().notify({
-            message: "This is a test notification",
-            type: "info",
-            duration: 5000,
-          });
-        },
+        defaultValue: false,
       },
     ],
   },
@@ -108,12 +89,14 @@ export const settingsConfig = {
         type: "boolean" as const,
         label: "Show Welcome App",
         prefrence: "showWelcomeApp",
+        defaultValue: true,
         hidden: true,
       },
     ],
   },
 } as const;
 
-export const UI_ASSETS_URL = 'https://cdn.jsdelivr.net/gh/spaceofnova/linux-react-data-store@main/ui-assets.zip';
+export const UI_ASSETS_URL =
+  "https://cdn.jsdelivr.net/gh/spaceofnova/linux-react-data-store@main/ui-assets.zip";
 
-export const APPS_DIRECTORY = '/apps';
+export const APPS_DIRECTORY = "/apps";

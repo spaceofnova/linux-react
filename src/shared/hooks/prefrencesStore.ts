@@ -1,27 +1,27 @@
 import { create } from "zustand";
 import { fs } from "@zenfs/core";
 import { PrefrenceValues } from "shared/types/settings";
+import { settingsConfig } from "shared/constants";
 
 const CONFIG_PATH = "/home/user.json";
-export const DEFAULT_PREFRENCES: PrefrenceValues = {
-  display: {
-    screenZoom: "100%",
-  },
-  dock: {
-    autoHideDock: false,
-    iconSize: "medium",
-  },
-  developer: {
-    debugMode: false,
-  },
-  appearance: {
-    userWallpaper: "/system/assets/wallpaper.jpg",
-    blurEffects: true,
-  },
-  hidden: {
-    showWelcomeApp: true,
-  }
+
+// Initialize preferences from config's default values
+const initializePreferences = () => {
+  const preferences: Record<string, Record<string, any>> = {};
+  
+  Object.entries(settingsConfig).forEach(([section, { settings }]) => {
+    preferences[section] = {};
+    settings.forEach((setting) => {
+      if ('prefrence' in setting && 'defaultValue' in setting) {
+        preferences[section][setting.prefrence] = setting.defaultValue;
+      }
+    });
+  });
+
+  return preferences as PrefrenceValues;
 };
+
+export const DEFAULT_PREFRENCES = initializePreferences();
 
 const configFileStorage = {
   load: (): PrefrenceValues => {
@@ -52,7 +52,6 @@ const configFileStorage = {
   watch: () => {
     let isUpdating = false;
     fs.watch(CONFIG_PATH, (eventType) => {
-      // Prevent multiple rapid updates and infinite loops
       if (isUpdating || eventType !== "change") return;
 
       isUpdating = true;
@@ -60,10 +59,7 @@ const configFileStorage = {
         const newPreferences = configFileStorage.load();
         const currentPreferences = usePrefrencesStore.getState().prefrences;
 
-        // Only update if the content actually changed
-        if (
-          JSON.stringify(currentPreferences) !== JSON.stringify(newPreferences)
-        ) {
+        if (JSON.stringify(currentPreferences) !== JSON.stringify(newPreferences)) {
           usePrefrencesStore.getState().setPrefrences(newPreferences);
         }
       } catch (error) {
@@ -75,11 +71,9 @@ const configFileStorage = {
   },
 
   init: () => {
-    // Create config file if it doesn't exist
     if (!fs.existsSync(CONFIG_PATH)) {
       configFileStorage.save(DEFAULT_PREFRENCES);
     }
-    // Start watching for changes
     configFileStorage.watch();
   },
 };
@@ -160,7 +154,6 @@ export const usePrefrencesStore = create<PrefrencesStoreType>()((set) => ({
       const keys = path.split(".");
       let current = newPrefrences as Record<string, unknown>;
 
-      // Navigate to the nested object
       for (let i = 0; i < keys.length - 1; i++) {
         const key = keys[i];
         if (!(key in current)) {
@@ -169,7 +162,6 @@ export const usePrefrencesStore = create<PrefrencesStoreType>()((set) => ({
         current = current[key] as Record<string, unknown>;
       }
 
-      // Set the value
       const lastKey = keys[keys.length - 1];
       current[lastKey] = value;
 
@@ -179,7 +171,6 @@ export const usePrefrencesStore = create<PrefrencesStoreType>()((set) => ({
   },
 }));
 
-// Modified LoadPrefrences to also initialize file watching
 export const LoadPrefrences = () => {
   configFileStorage.init();
   const loadedPreferences = configFileStorage.load();

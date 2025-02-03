@@ -1,5 +1,18 @@
 import { Terminal } from "@xterm/xterm";
 import { registry } from "./commands";
+import fs from "@zenfs/core";
+import path from "path-browserify";
+
+// Get user's home directory
+const HOME_DIR = '/home';
+if (!fs.existsSync(HOME_DIR)) {
+  fs.mkdirSync(HOME_DIR, { recursive: true });
+}
+
+export interface TitleChangeEvent {
+  type: 'command' | 'directory';
+  value: string;
+}
 
 export class TerminalBackend {
   private terminal: Terminal;
@@ -7,22 +20,42 @@ export class TerminalBackend {
   private commandHistory: string[] = [];
   private historyIndex = -1;
   private currentCommand: { cleanup?: () => void } | null = null;
+  private currentDirectory = HOME_DIR;
+  private onTitleChange?: (event: TitleChangeEvent) => void;
 
-  constructor(terminal: Terminal) {
+  constructor(terminal: Terminal, onTitleChange?: (event: TitleChangeEvent) => void) {
     this.terminal = terminal;
+    this.onTitleChange = onTitleChange;
     this.init();
   }
 
   private init() {
-    this.terminal.writeln('Welcome to Terminal');
+    this.terminal.writeln('Welcome to the terminal!');
     this.terminal.writeln('Type "help" for a list of commands');
+    this.updateTitle();
     this.prompt();
 
     this.terminal.onData(this.handleData);
   }
 
+  private updateTitle(command?: string) {
+    if (command) {
+      this.onTitleChange?.({ type: 'command', value: command });
+    } else {
+      // Replace home directory with ~ in the display
+      const displayPath = this.currentDirectory.startsWith(HOME_DIR) 
+        ? this.currentDirectory.replace(HOME_DIR, '~')
+        : this.currentDirectory;
+      this.onTitleChange?.({ type: 'directory', value: displayPath });
+    }
+  }
+
   private prompt() {
-    this.terminal.write('\r\n$ ');
+    // Replace home directory with ~ in the prompt
+    const displayPath = this.currentDirectory.startsWith(HOME_DIR) 
+      ? this.currentDirectory.replace(HOME_DIR, '~')
+      : this.currentDirectory;
+    this.terminal.write(`${displayPath}$ `);
   }
 
   private handleData = (data: string) => {
@@ -36,6 +69,7 @@ export class TerminalBackend {
       }
       this.terminal.write('^C');
       this.currentLine = '';
+      this.updateTitle();
       this.prompt();
       return;
     }
@@ -55,17 +89,22 @@ export class TerminalBackend {
         if (this.historyIndex < this.commandHistory.length - 1) {
           this.historyIndex++;
           this.currentLine = this.commandHistory[this.commandHistory.length - 1 - this.historyIndex];
-          this.terminal.write('\x1b[2K\r$ ' + this.currentLine);
+          this.terminal.write('\x1b[2K\r');
+          this.prompt();
+          this.terminal.write(this.currentLine);
         }
       } else if (data === '\x1b[B') { // Down arrow
         if (this.historyIndex > 0) {
           this.historyIndex--;
           this.currentLine = this.commandHistory[this.commandHistory.length - 1 - this.historyIndex];
-          this.terminal.write('\x1b[2K\r$ ' + this.currentLine);
+          this.terminal.write('\x1b[2K\r');
+          this.prompt();
+          this.terminal.write(this.currentLine);
         } else if (this.historyIndex === 0) {
           this.historyIndex = -1;
           this.currentLine = '';
-          this.terminal.write('\x1b[2K\r$ ');
+          this.terminal.write('\x1b[2K\r');
+          this.prompt();
         }
       }
     } else if (ord < 32) { // Control characters
@@ -73,6 +112,7 @@ export class TerminalBackend {
     } else { // Regular input
       this.currentLine += data;
       this.terminal.write(data);
+      this.updateTitle(this.currentLine);
     }
   };
 
@@ -92,12 +132,21 @@ export class TerminalBackend {
 
     if (!command) {
       this.terminal.writeln(`Command not found: ${cmdName}`);
+      this.updateTitle();
       this.prompt();
       return;
     }
 
     try {
-      const result = await command.execute({ terminal: this.terminal, args });
+      const result = await command.execute({ 
+        terminal: this.terminal, 
+        args,
+        setDirectory: (dir: string) => {
+          this.currentDirectory = dir;
+          this.updateTitle();
+        },
+        getCurrentDirectory: () => this.currentDirectory
+      });
       if (typeof result === 'function') {
         this.currentCommand = { cleanup: result };
       }
@@ -108,6 +157,7 @@ export class TerminalBackend {
     }
 
     if (!this.currentCommand?.cleanup) {
+      this.updateTitle();
       this.prompt();
     }
   }
@@ -115,6 +165,36 @@ export class TerminalBackend {
   public dispose() {
     if (this.currentCommand?.cleanup) {
       this.currentCommand.cleanup();
+    }
+  }
+
+  public getCurrentDirectory(): string {
+    return this.currentDirectory;
+  }
+
+  public setCurrentDirectory(dir: string): boolean {
+    try {
+      // Resolve ~ to home directory
+      const resolvedPath = dir.startsWith('~') 
+        ? path.join(HOME_DIR, dir.slice(1))
+        : dir;
+
+      // Check if directory exists
+      if (!fs.existsSync(resolvedPath)) {
+        return false;
+      }
+
+      // Check if it's a directory
+      const stats = fs.statSync(resolvedPath);
+      if (!stats.isDirectory()) {
+        return false;
+      }
+
+      this.currentDirectory = resolvedPath;
+      this.updateTitle();
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 } 

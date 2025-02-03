@@ -16,8 +16,8 @@ export const WindowManager = () => {
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
-      // Only run if there's actually a window focused
-      if (activeWindowId !== null && containerRef.current?.contains(e.target as Node) === false) {
+      // Only unfocus if click is directly on the container background
+      if (e.target === containerRef.current && activeWindowId !== null) {
         focusWindow(null);
       }
     };

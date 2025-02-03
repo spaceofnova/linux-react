@@ -5,7 +5,7 @@ import {
   ContextMenuTrigger,
 } from "shared/components/ui/context-menu";
 import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
-import Dock from "./components/taskbar/taskbar";
+import Taskbar from "./components/taskbar/taskbar";
 
 import fs from "@zenfs/core";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,13 +16,6 @@ export const Desktop = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prefrences = usePrefrencesStore((state) => state.prefrences);
   const [wallpaperReady, setWallpaperReady] = useState(false);
-  const [select, setSelect] = useState({
-    isSelecting: false,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
 
   const drawImageCover = useCallback(
     (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
@@ -91,74 +84,8 @@ export const Desktop = () => {
     }
   }, [prefrences.appearance?.userWallpaper, drawImageCover, wallpaperReady]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!select.isSelecting) return;
-
-      const width = e.clientX - select.x;
-      const height = e.clientY - select.y;
-
-      setSelect({
-        ...select,
-        width,
-        height,
-      });
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (e.target !== canvas) return;
-      
-      if (select.isSelecting) return;
-
-      setSelect({
-        isSelecting: true,
-        x: e.clientX,
-        y: e.clientY,
-        width: 0,
-        height: 0,
-      });
-    };
-
-    const handleMouseUp = () => {
-      setSelect({
-        isSelecting: false,
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      });
-    };
-
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mousedown", handleMouseDown);
-    canvas.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mousedown", handleMouseDown);
-      canvas.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [select]);
   return (
     <>
-      {/* {select.isSelecting && (
-        <div
-          style={{
-            position: "fixed",
-            left: select.width < 0 ? select.x + select.width : select.x,
-            top: select.height < 0 ? select.y + select.height : select.y,
-            width: Math.abs(select.width),
-            height: Math.abs(select.height),
-            border: "1px solid white/10",
-            backgroundColor: "rgba(153, 209, 255, 0.3)",
-            zIndex: 10,
-            pointerEvents: "none",
-            boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
-          }}
-        />
-      )} */}
       <ContextMenu>
         <ContextMenuTrigger>
           <div ref={containerRef} className="h-full w-full fixed bg-black">
@@ -179,7 +106,6 @@ export const Desktop = () => {
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-      <Dock />
     </>
   );
 };

@@ -1,8 +1,34 @@
 import { Terminal } from '@xterm/xterm';
+import fs from "@zenfs/core";
+import path from "path-browserify";
+
+const HOME_DIR = '/home';
+
+function normalizePath(currentPath: string, targetPath: string): string {
+  // Handle home directory
+  if (targetPath === '~' || targetPath === '') {
+    return HOME_DIR;
+  }
+
+  // Handle paths starting with ~
+  if (targetPath.startsWith('~/')) {
+    return path.join(HOME_DIR, targetPath.slice(2));
+  }
+
+  // Handle absolute paths
+  if (targetPath.startsWith('/')) {
+    return path.normalize(targetPath);
+  }
+  
+  // Handle relative paths
+  return path.normalize(path.join(currentPath, targetPath));
+}
 
 export interface CommandContext {
   terminal: Terminal;
   args: string[];
+  setDirectory: (dir: string) => void;
+  getCurrentDirectory: () => string;
 }
 
 export type CommandFunction = (context: CommandContext) => void | Promise<void> | Promise<(() => void)>;
@@ -48,7 +74,7 @@ registry.register({
   name: 'clear',
   description: 'Clear the terminal screen',
   execute: ({ terminal }) => {
-    terminal.clear();
+    terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top-left
   }
 });
 
@@ -57,6 +83,38 @@ registry.register({
   description: 'Echo the arguments',
   execute: ({ terminal, args }) => {
     terminal.writeln(args.join(' '));
+  }
+});
+
+registry.register({
+  name: 'cd',
+  description: 'Change the current directory. Usage: cd [directory]',
+  execute: ({ terminal, args, setDirectory, getCurrentDirectory }) => {
+    try {
+      let targetPath;
+      if (args.length === 0 || args[0] === '~') {
+        targetPath = HOME_DIR;
+      } else {
+        targetPath = normalizePath(getCurrentDirectory(), args[0]);
+      }
+
+      // Check if directory exists
+      if (!fs.existsSync(targetPath)) {
+        terminal.writeln(`cd: ${args[0]}: No such file or directory`);
+        return;
+      }
+
+      // Check if it's a directory
+      const stats = fs.statSync(targetPath);
+      if (!stats.isDirectory()) {
+        terminal.writeln(`cd: ${args[0]}: Not a directory`);
+        return;
+      }
+
+      setDirectory(targetPath);
+    } catch (error) {
+      terminal.writeln(`cd: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 });
 
@@ -70,7 +128,7 @@ registry.register({
     const noLimit = args.includes('--no-limit');
 
     const MIN_WIDTH = 82;  // Minimum width needed for donut
-    const MIN_HEIGHT = showDebug ? 24 : 22;  // Minimum height with/without debug info
+    const MIN_HEIGHT = showDebug ? 32 : 22;  // Minimum height with/without debug info
     
     // Performance tracking
     let frameCount = 0;
@@ -88,7 +146,7 @@ registry.register({
     terminal.write('\x1b[2J'); // Clear screen
     
     const DONUT_WIDTH = 80;
-    const DONUT_HEIGHT = showDebug ? 18 : 28; // Reserve space for debug info
+    const DONUT_HEIGHT = 24;
     let fps = 0;
 
     const renderTooSmallMessage = (width: number, height: number) => {
@@ -332,6 +390,128 @@ registry.register({
     if (!['info', 'buffer', 'test', 'colors', 'all'].includes(mode)) {
       terminal.writeln('\x1b[1;31mInvalid debug mode.\x1b[0m');
       terminal.writeln('Available modes: info, buffer, test, colors, all');
+    }
+  }
+});
+
+registry.register({
+  name: 'ls',
+  description: 'List directory contents',
+  execute: ({ terminal, args, getCurrentDirectory }) => {
+    try {
+      const targetPath = args.length > 0 
+        ? normalizePath(getCurrentDirectory(), args[0])
+        : getCurrentDirectory();
+
+      if (!fs.existsSync(targetPath)) {
+        terminal.writeln(`ls: ${args[0] || targetPath}: No such file or directory`);
+        return;
+      }
+
+      const stats = fs.statSync(targetPath);
+      if (!stats.isDirectory()) {
+        terminal.writeln(path.basename(targetPath));
+        return;
+      }
+
+      const entries = fs.readdirSync(targetPath);
+      if (entries.length === 0) {
+        return;
+      }
+
+      // Format and display entries
+      const output = entries.sort().map(entry => {
+        const entryPath = path.join(targetPath, entry);
+        const stats = fs.statSync(entryPath);
+        if (stats.isDirectory()) {
+          return entry + '/';
+        }
+        return entry;
+      });
+
+      terminal.writeln(output.join('  '));
+    } catch (error) {
+      terminal.writeln(`ls: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+});
+
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10).replace(/-/g, '-');
+}
+
+function formatTime(date: Date): string {
+  return date.toTimeString().slice(0, 5);
+}
+
+function formatFileSize(bytes: number): string {
+  return bytes.toString().padStart(14, ' ');
+}
+
+registry.register({
+  name: 'dir',
+  description: 'List directory contents in detailed format',
+  execute: ({ terminal, args, getCurrentDirectory }) => {
+    try {
+      const targetPath = args.length > 0 
+        ? normalizePath(getCurrentDirectory(), args[0])
+        : getCurrentDirectory();
+
+      if (!fs.existsSync(targetPath)) {
+        terminal.writeln(`dir: ${args[0] || targetPath}: No such file or directory`);
+        return;
+      }
+
+      const stats = fs.statSync(targetPath);
+      if (!stats.isDirectory()) {
+        // Format single file
+        const size = formatFileSize(stats.size);
+        const name = path.basename(targetPath);
+        terminal.writeln(`${size}  ${name}`);
+        return;
+      }
+
+      // Display directory header
+      terminal.writeln(`Directory of ${targetPath}`);
+      terminal.writeln('');
+
+      const entries = fs.readdirSync(targetPath);
+      if (entries.length === 0) {
+        terminal.writeln('File Not Found');
+        return;
+      }
+
+      let totalFiles = 0;
+      let totalDirs = 0;
+      let totalSize = 0;
+
+      // Format and display entries
+      const output = entries.sort().map(entry => {
+        const entryPath = path.join(targetPath, entry);
+        const stats = fs.statSync(entryPath);
+        const date = new Date();
+        const dateStr = formatDate(date);
+        const timeStr = formatTime(date);
+        
+        if (stats.isDirectory()) {
+          totalDirs++;
+          return `${dateStr}  ${timeStr}    <DIR>          ${entry}`;
+        } else {
+          totalFiles++;
+          totalSize += stats.size;
+          return `${dateStr}  ${timeStr}    ${formatFileSize(stats.size)} ${entry}`;
+        }
+      });
+
+      // Display entries
+      output.forEach(line => terminal.writeln(line));
+
+      // Display summary with exact spacing
+      terminal.writeln(`${' '.repeat(14)}${totalFiles} File(s)${formatFileSize(totalSize)} bytes`);
+      terminal.writeln(`${' '.repeat(14)}${totalDirs} Dir(s)  ${formatFileSize(fs.statSync(targetPath).size)} bytes free`);
+
+    } catch (error) {
+      terminal.writeln(`dir: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 });

@@ -29,10 +29,12 @@ const SettingsApp = ({
   id: string;
   deepLink: PrefrenceSection;
 }) => {
-  const [currentPage, setCurrentPage] = useState<PrefrenceSection>(
-    deepLink || "display"
+  const [currentPage, setCurrentPage] = useState<PrefrenceSection | "home">(
+    deepLink || "home"
   );
-  const updateCurrentPage = (page: PrefrenceSection) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const updateCurrentPage = (page: PrefrenceSection | "home") => {
     useWindowStore.getState().updateWindow(id, {
       deepLink: undefined,
     });
@@ -41,7 +43,6 @@ const SettingsApp = ({
 
   const { prefrences, updatePrefrence } = usePrefrencesStore();
 
-  // This makes sure if the window is already open it listens to the deepLink updating
   useEffect(() => {
     if (deepLink) {
       setCurrentPage(deepLink);
@@ -64,7 +65,7 @@ const SettingsApp = ({
       case "boolean":
         return (
           <div
-            className="flex items-center justify-between"
+            className="flex items-center justify-between p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors"
             key={`${section}-${index}`}
           >
             <label htmlFor={path} className="text-sm font-medium">
@@ -81,7 +82,7 @@ const SettingsApp = ({
         );
       case "string":
         return (
-          <div className="flex flex-col gap-2" key={`${section}-${index}`}>
+          <div className="flex flex-col gap-1 p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors" key={`${section}-${index}`}>
             <label htmlFor={path} className="text-sm font-medium">
               {setting.label}
             </label>
@@ -94,7 +95,7 @@ const SettingsApp = ({
         );
       case "number":
         return (
-          <div className="flex flex-col gap-2" key={`${section}-${index}`}>
+          <div className="flex flex-col gap-1 p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors" key={`${section}-${index}`}>
             <label htmlFor={path} className="text-sm font-medium">
               {setting.label}
             </label>
@@ -113,7 +114,7 @@ const SettingsApp = ({
         );
       case "select":
         return (
-          <div className="flex flex-col gap-2" key={`${section}-${index}`}>
+          <div className="flex flex-col gap-1 p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors" key={`${section}-${index}`}>
             <label htmlFor={path} className="text-sm font-medium">
               {setting.label}
             </label>
@@ -137,7 +138,7 @@ const SettingsApp = ({
       case "button":
         return (
           <div
-            className="flex items-center justify-between"
+            className="flex items-center justify-between p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors"
             key={`${section}-${index}`}
           >
             <span className="text-sm font-medium">{setting.label}</span>
@@ -160,9 +161,9 @@ const SettingsApp = ({
       title: section as PrefrenceSection,
       description,
       component: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{description}</p>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {settings
               .filter((setting) => !("hidden" in setting && setting.hidden))
               .map((setting, index) =>
@@ -175,20 +176,59 @@ const SettingsApp = ({
 
   const activePage = pages.find((page) => page.title === currentPage);
 
-  if (!activePage) return null;
+  const renderHomePage = () => (
+    <div className="space-y-3">
+      <h1 className="text-2xl font-semibold">Settings</h1>
+      <div className="space-y-1">
+        {pages.map((page) => (
+          <Button
+            key={page.title}
+            variant="ghost"
+            className="flex flex-col items-start p-2 bg-card rounded-lg hover:bg-accent/10 transition-colors w-full gap-0 h-12"
+            onClick={() => updateCurrentPage(page.title)}
+          >
+            <h2 className="text-base font-semibold capitalize">{page.title}</h2>
+            <p className="text-xs text-muted-foreground text-left">
+              {page.description}
+            </p>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const filteredPages = searchQuery
+    ? pages.filter(
+        (page) =>
+          page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          page.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : pages;
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
+    <div className="flex h-full w-full bg-background">
       <Sidebar
         pages={pages}
         activePage={currentPage}
         setActivePage={updateCurrentPage}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
-      <div className="p-4 w-full max-w-2xl overflow-y-auto">
-        <h1 className="text-2xl font-bold capitalize mb-6">
-          {activePage.title}
-        </h1>
-        {activePage.component}
+      <div className="flex-1 h-full overflow-y-auto">
+        <div className="p-3 max-w-2xl">
+          {currentPage === "home" ? (
+            renderHomePage()
+          ) : (
+            activePage && (
+              <>
+                <h1 className="text-2xl font-semibold capitalize mb-3">
+                  {activePage.title}
+                </h1>
+                {activePage.component}
+              </>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

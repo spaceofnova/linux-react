@@ -24,6 +24,7 @@ import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { MainErrorFault } from "shared/components/bigError";
 import { validateFileStructure } from "./shared/utils/corruption";
 import { LazyMotion, domAnimation } from "motion/react";
+import Taskbar from "desktop/components/taskbar/taskbar";
 
 await configure({
   mounts: {
@@ -53,26 +54,30 @@ const functions = () => {
 
   LoadPrefrences();
   SetupAppsWatcher();
-  // setupWindowEventHandlers();
   showWelcomeApp();
 };
 
 functions();
 
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider>
-    {setupLock === null ? (
-      <Setup />
-    ) : validateFileStructure() ? (
-      <ErrorBoundary errorComponent={MainErrorFault}>
-        <LazyMotion features={domAnimation}>
-          <Desktop />
-          <WindowManager />
-          <Notifications />
-        </LazyMotion>
-      </ErrorBoundary>
-    ) : (
-      <CorruptError />
-    )}
-  </ThemeProvider>
-);
+const App = () => {
+  return (
+    <ThemeProvider>
+      {setupLock === null ? (
+        <Setup />
+      ) : validateFileStructure() ? (
+        <ErrorBoundary errorComponent={MainErrorFault}>
+          <LazyMotion features={domAnimation}>
+            <Desktop />
+            <WindowManager />
+            <Taskbar />
+            <Notifications />
+          </LazyMotion>
+        </ErrorBoundary>
+      ) : (
+        <CorruptError />
+      )}
+    </ThemeProvider>
+  );
+};
+
+createRoot(document.getElementById("root")!).render(<App />);
