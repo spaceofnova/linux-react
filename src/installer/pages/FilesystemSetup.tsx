@@ -5,9 +5,9 @@ import { Checkbox } from "shared/components/ui/checkbox";
 import { SetupConfig } from "installer/lib/setup-config";
 import { UI_ASSETS_URL } from "shared/constants";
 import fs from "@zenfs/core";
-import JSZip from "jszip";
 import { Loader2, HardDrive, Trash2, Download } from "lucide-react";
 import { FC, useEffect, useState } from "react";
+import {useDownload} from "shared/utils/unix.ts";
 
 interface FilesystemSetupProps {
   onNavigate: (path: string) => void;
@@ -27,8 +27,7 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
   const [isScanning, setIsScanning] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
   const [downloadAssets, setDownloadAssets] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
+  const { status, startDownload, progress } = useDownload()
 
   const scanDrive = async () => {
     setIsScanning(true);
@@ -59,70 +58,38 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
   const clearDrive = async () => {
     setIsClearing(true);
     try {
-      if (fs.existsSync("/")) {
-        fs.rmSync("/", { recursive: true, force: true });
-      }
-      fs.mkdirSync("/", { recursive: true });
+      fs.readdir("/", (error, data) => {
+          if (error) {
+            return console.log(error);
+          }
+          data?.forEach((item) => {
+            fs.rm(item, (err) => {
+              if (err) {
+                return console.log(error);
+              }
+            })
+          })
+      })
+
 
       // Update drive state
       setDrive(prev => prev ? { ...prev, used: 0, hasData: false } : null);
     } catch (error) {
       console.error("Error clearing drive:", error);
+      setIsClearing(false);
     } finally {
       setIsClearing(false);
     }
   };
 
   const downloadUIAssets = async () => {
-    setIsDownloading(true);
-    setDownloadProgress(0);
-    
-    try {
-      const response = await fetch(UI_ASSETS_URL);
-      const blob = await response.blob();
-      setDownloadProgress(33); // Show some progress for download
-
-      // Load zip file
-      const zip = new JSZip();
-      const zipContents = await zip.loadAsync(blob);
-      setDownloadProgress(66); // Show progress for zip loading
-
-      // Create system directory if it doesn't exist
-      if (!fs.existsSync("/system")) {
-        fs.mkdirSync("/system", { recursive: true });
+    await startDownload({
+      url: UI_ASSETS_URL,
+      isZip: true,
+      zipOptions: {
+        outputDir: "system"
       }
-
-      // Extract files
-      const totalFiles = Object.keys(zipContents.files).length;
-      let processedFiles = 0;
-
-      for (const [relativePath, zipEntry] of Object.entries(zipContents.files)) {
-        if (!zipEntry.dir) {
-          const content = await zipEntry.async('arraybuffer');
-          const targetPath = `/system/${relativePath}`;
-          
-          // Create parent directories if they don't exist
-          const parentDir = targetPath.substring(0, targetPath.lastIndexOf('/'));
-          if (!fs.existsSync(parentDir)) {
-            fs.mkdirSync(parentDir, { recursive: true });
-          }
-
-          // Write file using Uint8Array directly
-          fs.writeFileSync(targetPath, new Uint8Array(content));
-        }
-
-        processedFiles++;
-        // Show remaining progress (66-100%) for extraction
-        setDownloadProgress(66 + ((processedFiles / totalFiles) * 34));
-      }
-
-      localStorage.setItem('uiAssetsDownloaded', 'true');
-    } catch (error) {
-      console.error("Error downloading and extracting UI assets:", error);
-    } finally {
-      setIsDownloading(false);
-      setDownloadProgress(0);
-    }
+    })
   };
 
   const handleContinue = async () => {
@@ -144,7 +111,7 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
     return (
       <div className="flex flex-col gap-4 flex-1 p-4 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p>Scanning drive...</p>
+        <p>Scanning drives...</p>
       </div>
     );
   }
@@ -214,7 +181,7 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
               id="download-assets" 
               checked={downloadAssets}
               onCheckedChange={(checked) => setDownloadAssets(checked === true)}
-              disabled={isDownloading}
+              disabled={status == "inProgress"}
             />
             <label
               htmlFor="download-assets"
@@ -223,11 +190,11 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
               Download UI assets now
             </label>
           </div>
-          {downloadAssets && isDownloading && (
+          {downloadAssets && status == "inProgress" && (
             <div className="mt-2">
-              <Progress value={downloadProgress} className="h-2" />
+              <Progress value={progress.percentage} className="h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                Downloading UI assets... {downloadProgress.toFixed(0)}%
+                Downloading UI assets... {progress.percentage.toFixed(0)}%
               </p>
             </div>
           )}
@@ -240,9 +207,9 @@ export const FilesystemSetup: FC<FilesystemSetupProps> = ({ onNavigate, config }
         </Button>
         <Button 
           onClick={handleContinue}
-          disabled={drive.hasData || isClearing || isDownloading}
+          disabled={drive.hasData || isClearing || status == "inProgress"}
         >
-          {isDownloading ? (
+          {status == "inProgress" ? (
             <>
               <Download className="h-4 w-4 mr-2 animate-bounce" />
               Downloading...
