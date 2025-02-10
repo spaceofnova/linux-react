@@ -4,7 +4,7 @@ echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
 
 if [[ "$VERCEL_GIT_COMMIT_REF" == "master" ]]; then
   # Check for changes in the master branch's source directory
-  if git diff-tree --no-commit-id --name-only -r origin/master HEAD -- <path/to/your/source/directory> > /dev/null; then
+  if git diff-tree --no-commit-id --name-only -r origin/master HEAD -- ./src > /dev/null; then
     # No changes in the source directory
     echo "🛑 - No changes in source directory. Build cancelled."
     exit 0
