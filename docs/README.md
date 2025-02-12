@@ -1,3 +1,8 @@
+---
+label: "What is Linux React?"
+icon: home
+---
+
 # Linux React
 
 A web-based Linux distribution built with React, offering a modern desktop experience in your browser.
@@ -36,31 +41,44 @@ Linux React is an experimental project that brings the Linux desktop experience 
 
 ### Current Focus
 
-- [-] Core system architecture
+- [X] Core system architecture
 - [x] Installation wizard
 - [X] Basic desktop environment
 - [ ] Application framework
 - [ ] Package management system
 
-## Getting Started
+## Quick Start  
 
-1. Clone the repository
-2. Install dependencies with `npm install`
-3. Start the development environment with `npm run dev`
+You can install Linux React API using `npm`, `pnpm` or `bun`. <br/>
+<small style="color: gray;">Note: Other package managers should work fine, these are just the ones that have been tested.</small>
+
++++ NPM
+```
+npm install linux-react-api
+linux-react start
+```
++++ PNPM 
+```
+pnpm add linux-react-api
+linux-react start
+```
++++ Bun
+```
+bun add linux-react-api
+linux-react start
+```
++++
+
 
 ## Contributing
 
-We welcome contributions! Please check our [Contributing Guide](CONTRIBUTING.md) for details on:
-- Development setup
-- Code style guidelines
-- Pull request process
-- Feature proposals
+We welcome contributions! If you have any proposals to this, just create an issue on Github!
 
 ## Documentation
 
 - [Architecture Overview](docs/architecture.md)
 - [Development Guide](docs/development.md)
-- [API Reference](docs/api.md)
+- [API Reference](docs/api/index.md)
 
 ## Community
 

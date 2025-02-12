@@ -1,12 +1,4 @@
-interface Size {
-  width: number;
-  height: number;
-}
-
-interface Position {
-  x: number;
-  y: number;
-}
+import { type Position, Size } from "./general"
 
 export declare interface AppType {
   /** Unique identifier for the app */

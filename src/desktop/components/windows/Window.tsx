@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useState,
   useRef,
-  useMemo,
   useCallback,
 } from "react";
 import { Maximize2Icon, MinusIcon, X } from "lucide-react";
@@ -13,9 +12,8 @@ import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { useAppStore } from "shared/hooks/appstore";
 import { MotionView } from "shared/components/ui/View";
 import { readFileSync } from "@zenfs/core";
-import { AppIcon } from "shared/components/AppIcon";
 import { cn } from "shared/utils/cn";
-import * as m from "motion/react-m";
+import { type Position, type Size } from "shared/types/general"
 
 type WindowProps = WindowType & {
   isFocused?: boolean;
@@ -30,9 +28,9 @@ const windowActions = {
   },
   maximize: (id: string) => useWindowStore.getState().maximizeWindow(id),
   restore: (id: string) => useWindowStore.getState().restoreWindow(id),
-  move: (id: string, position: any, relative: boolean) =>
+  move: (id: string, position: Position, relative: boolean) =>
     useWindowStore.getState().moveWindow(id, position, relative),
-  resize: (id: string, size: any, position: any) =>
+  resize: (id: string, size: Size, position: Position) =>
     useWindowStore.getState().resizeWindow(id, size, position),
   minimize: (id: string) => useWindowStore.getState().minimizeWindow(id),
 };
@@ -111,7 +109,7 @@ export const Window = React.memo<WindowProps>((props) => {
   const renderContent = () => (
     <div
       className={cn(
-        "w-full bg-background",
+        "w-full",
         props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]"
       )}
     >

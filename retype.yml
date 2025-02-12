@@ -2,8 +2,8 @@ input: ./docs
 output: .retype
 url: spaceofnova.github.io/linux-react # Add your website here
 branding:
-  title: Project Name
-  label: Docs
+  title: Linux React
+  label: API Docs
 links:
   - text: Getting Started
     link: https://retype.com/guides/getting-started/
