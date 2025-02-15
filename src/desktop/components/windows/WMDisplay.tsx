@@ -1,9 +1,9 @@
 import { Window } from "desktop/components/windows/Window";
-import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
 import { useWindowStore } from "shared/hooks/windowStore";
 import { AnimatePresence } from "motion/react";
 import { useEffect, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useRegistryStore } from "shared/hooks/registry.ts";
 
 export const WindowManager = () => {
   // Get all window data directly
@@ -11,8 +11,8 @@ export const WindowManager = () => {
   const activeWindowId = useWindowStore((state) => state.activeWindowId);
   const { focusWindow, closeWindow } = useWindowStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const prefrences = usePrefrencesStore((state) => state.prefrences);
-  const updatePrefrence = usePrefrencesStore((state) => state.updatePrefrence);
+  const { getKey, setKey } = useRegistryStore();
+  const debugMode = getKey("/developer/debugMode");
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -32,12 +32,12 @@ export const WindowManager = () => {
   });
 
   useHotkeys("alt+shift+d", () => {
-    updatePrefrence("developer.debugMode", !prefrences.developer?.debugMode);
+    setKey("/developer/debugMode", !debugMode);
   });
 
   return (
     <div ref={containerRef}>
-      {prefrences.developer?.debugMode && (
+      {debugMode && (
         <div className="fixed top-0 left-0 z-0">
           <p>Debug Mode Enabled!</p>
           <pre>Window Count: {windows.length}</pre>

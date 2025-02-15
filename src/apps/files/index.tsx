@@ -37,7 +37,7 @@ const iconMap = {
   png: <LucideFileImage className="min-h-4 min-w-4 w-4 h-4" />,
   jpg: <LucideFileImage className="min-h-4 min-w-4 w-4 h-4" />,
   jpeg: <LucideFileImage className="min-h-4 min-w-4 w-4 h-4" />,
-} as const;
+};
 
 const normalizePath = (path: string) => path.replace(/\/+/g, "/");
 

@@ -1,4 +1,4 @@
-import { type Position, Size } from "./general"
+import { type Position, Size } from "./general";
 
 export declare interface AppType {
   /** Unique identifier for the app */
@@ -33,7 +33,7 @@ export declare interface AppStoreType {
 export declare interface WindowType {
   // Core window properties
   /** Unique identifier for the window */
-  id?: string;
+  id: string;
   /** Title displayed in window title bar */
   title: string;
   /** React component to render as window content */
@@ -99,7 +99,7 @@ export interface WindowStoreType {
 export interface NotificationType {
   id: string;
   message: string;
-  type?: 'success' | 'error' | 'info' | 'warning' | 'default';
+  type?: "success" | "error" | "info" | "warning" | "default";
   duration?: number;
   description?: string;
   action?: {
@@ -111,7 +111,7 @@ export interface NotificationType {
   remainingDuration?: number;
 }
 
-type NotificationInput = Omit<NotificationType, 'id'>;
+type NotificationInput = Omit<NotificationType, "id">;
 
 export interface NotificationStoreType {
   notifications: NotificationType[];

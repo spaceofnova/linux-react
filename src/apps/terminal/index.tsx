@@ -2,7 +2,7 @@ import { Button } from "shared/components/ui/button";
 import { useWindowStore } from "shared/hooks/windowStore";
 import { WindowType } from "shared/types/storeTypes";
 import { Maximize2Icon, X, Plus } from "lucide-react";
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
@@ -10,8 +10,6 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { TerminalBackend } from "./backend";
 import { cn } from "shared/utils/cn";
-
-const ROOT_DIR = '/';
 
 interface TerminalInstance {
   id: string;
@@ -21,11 +19,11 @@ interface TerminalInstance {
   fitAddon: FitAddon | null;
 }
 
-function Terminal({ 
+function Terminal({
   instance,
   onTitleChange,
-  isActive
-}: { 
+  isActive,
+}: {
   instance: TerminalInstance;
   onTitleChange: (title: string) => void;
   isActive: boolean;
@@ -58,7 +56,7 @@ function Terminal({
     fitAddon.fit();
 
     const backend = new TerminalBackend(terminal, (event) => {
-      if (event.type === 'directory') {
+      if (event.type === "directory") {
         onTitleChange(event.value);
       } else if (event.value) {
         onTitleChange(event.value);
@@ -77,7 +75,7 @@ function Terminal({
       resizeObserver.observe(containerRef.current.parentElement as Element);
     }
 
-    setTimeout(debouncedFit, 100);
+    setTimeout(debouncedFit, 0);
 
     // Store references in the instance
     instance.terminal = terminal;
@@ -90,7 +88,7 @@ function Terminal({
       webglAddon.dispose();
       backend.dispose();
       terminal.dispose();
-      
+
       // Clear references
       instance.terminal = null;
       instance.backend = null;
@@ -108,10 +106,7 @@ function Terminal({
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "w-full h-full overflow-hidden",
-        !isActive && "hidden"
-      )}
+      className={cn("w-full h-full overflow-hidden", !isActive && "hidden")}
       style={{
         padding: "4px",
         backgroundColor: "black",
@@ -120,7 +115,15 @@ function Terminal({
   );
 }
 
-export function TerminalHeader({ windowProps, tabs, activeTab, onNewTab, onCloseTab, onTabClick, onCloseWindow }: { 
+export function TerminalHeader({
+  windowProps,
+  tabs,
+  activeTab,
+  onNewTab,
+  onCloseTab,
+  onTabClick,
+  onCloseWindow,
+}: {
   windowProps: WindowType;
   tabs: TerminalInstance[];
   activeTab: string;
@@ -132,7 +135,7 @@ export function TerminalHeader({ windowProps, tabs, activeTab, onNewTab, onClose
   const { maximizeWindow, restoreWindow } = useWindowStore();
 
   return (
-    <div className="h-10 w-full px-2 inline-flex justify-between items-center border-b titlebar">
+    <div className="min-h-10 w-full px-2 inline-flex justify-between items-center border-b titlebar">
       <div className="flex-1 flex items-center gap-1">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => (
@@ -142,7 +145,7 @@ export function TerminalHeader({ windowProps, tabs, activeTab, onNewTab, onClose
               className={cn(
                 "px-3 h-8 flex items-center gap-2 rounded-md text-sm transition-colors",
                 "hover:bg-muted/50",
-                activeTab === tab.id && "bg-muted"
+                activeTab === tab.id && "bg-muted",
               )}
             >
               {tab.title}
@@ -200,8 +203,10 @@ export function TerminalHeader({ windowProps, tabs, activeTab, onNewTab, onClose
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 const debounce = (fn: Function, ms = 100) => {
   let timeoutId: ReturnType<typeof setTimeout>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: any[]) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), ms);
@@ -224,9 +229,9 @@ export default function TerminalApp({
       title: "Terminal",
       terminal: null,
       backend: null,
-      fitAddon: null
+      fitAddon: null,
     };
-    setTerminals(prev => [...prev, newTerminal]);
+    setTerminals((prev) => [...prev, newTerminal]);
     setActiveTab(id);
   };
 
@@ -235,16 +240,16 @@ export default function TerminalApp({
   }, []);
 
   const handleCloseTab = (tabId: string) => {
-    const terminal = terminals.find(t => t.id === tabId);
+    const terminal = terminals.find((t) => t.id === tabId);
     if (terminal) {
       terminal.backend?.dispose();
       terminal.terminal?.dispose();
     }
 
-    setTerminals(prev => prev.filter(t => t.id !== tabId));
-    
+    setTerminals((prev) => prev.filter((t) => t.id !== tabId));
+
     if (activeTab === tabId) {
-      const remainingTabs = terminals.filter(t => t.id !== tabId);
+      const remainingTabs = terminals.filter((t) => t.id !== tabId);
       if (remainingTabs.length > 0) {
         setActiveTab(remainingTabs[remainingTabs.length - 1].id);
       } else {
@@ -255,7 +260,7 @@ export default function TerminalApp({
 
   const handleCloseWindow = () => {
     // Clean up all terminals
-    terminals.forEach(terminal => {
+    terminals.forEach((terminal) => {
       terminal.backend?.dispose();
       terminal.terminal?.dispose();
     });
@@ -264,14 +269,14 @@ export default function TerminalApp({
   };
 
   const updateTabTitle = (title: string) => {
-    setTerminals(prev => prev.map(term => 
-      term.id === activeTab ? { ...term, title } : term
-    ));
+    setTerminals((prev) =>
+      prev.map((term) => (term.id === activeTab ? { ...term, title } : term)),
+    );
   };
 
   return (
-    <div className="flex flex-col h-full bg-black">
-      <TerminalHeader 
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      <TerminalHeader
         windowProps={windowProps}
         tabs={terminals}
         activeTab={activeTab}
@@ -280,8 +285,8 @@ export default function TerminalApp({
         onTabClick={setActiveTab}
         onCloseWindow={handleCloseWindow}
       />
-      <div className="flex-1 relative">
-        {terminals.map(term => (
+      <div className="h-full w-full">
+        {terminals.map((term) => (
           <Terminal
             key={term.id}
             instance={term}

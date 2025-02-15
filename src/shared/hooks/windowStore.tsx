@@ -1,30 +1,62 @@
 import { create } from "zustand";
 import { WindowStoreType, WindowType } from "shared/types/storeTypes";
 import { toast } from "sonner";
+import { Position } from "shared/types/general.ts";
 
-export const useWindowStore = create<WindowStoreType>()((set) => ({
+// Internal position cache
+const positionCache = new Map();
+
+// Internal helpers
+const getCachedPosition = (id: string, defaultPos: Position) => {
+  if (positionCache.has(id)) {
+    return positionCache.get(id);
+  }
+  positionCache.set(id, defaultPos);
+  return defaultPos;
+};
+
+const clampPosition = (position: Position) => {
+  const MIN_Y_POSITION = 0;
+  const MAX_Y_POSITION = window.innerHeight - 64;
+  const MAX_X_POSITION = window.innerWidth - 64;
+  const MIN_X_POSITION = 0;
+
+  return {
+    x: Math.max(MIN_X_POSITION, Math.min(MAX_X_POSITION, position.x)),
+    y: Math.max(MIN_Y_POSITION, Math.min(MAX_Y_POSITION, position.y)),
+  };
+};
+
+export const useWindowStore = create<WindowStoreType>()((set, get) => ({
   windows: [],
   activeWindowId: null,
 
+  // Original API maintained
   createWindow: ({ ...window }: WindowType) => {
     if (!window.id) {
       toast.error("Failed to launch window, no ID provided");
       return;
     }
-    if (useWindowStore.getState().windows.find((w) => w.id === window.id)) {
-      useWindowStore.getState().focusWindow(window.id);
+
+    // Check existing window (original behavior)
+    if (get().windows.find((w) => w.id === window.id)) {
+      get().focusWindow(window.id);
       return;
     }
-    const maxZIndex = Math.max(
-      ...useWindowStore.getState().windows.map((w) => w.zIndex || 0),
-      -1
-    );
+
+    const maxZIndex = Math.max(...get().windows.map((w) => w.zIndex || 0), -1);
+
+    // Use cached position if available
+    const defaultPosition = window.position || { x: 100, y: 100 };
+    const position = getCachedPosition(window.id, defaultPosition);
+
     const newWindow = {
       ...window,
-      position: window.position || { x: 100, y: 100 },
-      size: window.size || { width: 400, height: 300 },
+      position,
+      size: window.size || { width: 540, height: 400 },
       zIndex: maxZIndex + 1,
     };
+
     set((state) => ({
       windows: [...state.windows, newWindow],
       activeWindowId: window.id,
@@ -33,26 +65,22 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
 
   focusWindow: (id) => {
     set((state) => {
-      if (!id) {
-        return { activeWindowId: null };
-      }
+      if (!id) return { activeWindowId: null };
+      if (state.activeWindowId === id) return state;
 
-      // If window is already focused, don't update zIndex
-      if (state.activeWindowId === id) {
-        return state;
-      }
+      const windowIndex = state.windows.findIndex((w) => w.id === id);
+      if (windowIndex === -1) return state;
 
-      // Find the window to focus
-      const windowToFocus = state.windows.find((window) => window.id === id);
-      if (!windowToFocus) return state;
-
-      // Get the highest z-index
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex || 0));
-
-      // Update only the z-index of the focused window
-      const updatedWindows = state.windows.map((window) =>
-        window.id === id ? { ...window, zIndex: maxZIndex + 1 } : window
+      const maxZIndex = state.windows.reduce(
+        (max, w) => Math.max(max, w.zIndex || 0),
+        0,
       );
+
+      const updatedWindows = [...state.windows];
+      updatedWindows[windowIndex] = {
+        ...state.windows[windowIndex],
+        zIndex: maxZIndex + 1,
+      };
 
       return {
         windows: updatedWindows,
@@ -62,12 +90,17 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
   },
 
   closeWindow: (id) => {
+    // Cache position before closing
+    const window = get().windows.find((w) => w.id === id);
+    if (window?.position) {
+      positionCache.set(id, window.position);
+    }
+
+    // Original behavior maintained
     set((state) => {
-      const newWindows = state.windows.filter((window) => window.id !== id);
-      const isAnyWindowLeft = newWindows.length > 0;
-      const activeWindowId = isAnyWindowLeft
-        ? newWindows[newWindows.length - 1].id
-        : null;
+      const newWindows = state.windows.filter((w) => w.id !== id);
+      const activeWindowId =
+        newWindows.length > 0 ? newWindows[newWindows.length - 1].id : null;
 
       return {
         windows: newWindows,
@@ -91,7 +124,7 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
                 height: window.innerHeight,
               },
             }
-          : win
+          : win,
       );
       return { windows: updatedWindows };
     });
@@ -99,14 +132,14 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
 
   minimizeWindow: (id) => {
     set((state) => {
-      const updatedWindows = state.windows.map((window) =>
-        window.id === id
+      const updatedWindows = state.windows.map((win) =>
+        win.id === id
           ? {
-              ...window,
+              ...win,
               isMinimized: true,
-              position: window.prevPos || { x: 0, y: 0 },
+              position: win.prevPos || { x: 0, y: 0 },
             }
-          : window
+          : win,
       );
       return { windows: updatedWindows };
     });
@@ -114,94 +147,66 @@ export const useWindowStore = create<WindowStoreType>()((set) => ({
 
   restoreWindow: (id) => {
     set((state) => {
-      const updatedWindows = state.windows.map((window) => ({
-        ...(window.id === id
+      const updatedWindows = state.windows.map((win) =>
+        win.id === id
           ? {
-              ...window,
+              ...win,
               isMaximized: false,
-              size: window.prevSize,
-              position: window.prevPos || { x: 0, y: 0 },
+              size: win.prevSize,
+              position: getCachedPosition(id, win.prevPos || { x: 0, y: 0 }),
             }
-          : window),
-      }));
+          : win,
+      );
       return { windows: updatedWindows };
     });
   },
 
   moveWindow: (id, position, relative) => {
-    // Minimum Y position to ensure window stays below browser chrome
-    const MIN_Y_POSITION = 0; // Typically browser chrome is around 32px height
-    const MAX_Y_POSITION = window.innerHeight - 64;
-    const MAX_X_POSITION = window.innerWidth - 64;
-    const MIN_X_POSITION = 0;
+    const currentWindow = get().windows.find((w) => w.id === id);
+    if (!currentWindow) return;
 
-    if (relative) {
-      set((state) => {
-        const updatedWindows = state.windows.map((window) =>
-          window.id === id
-            ? {
-                ...window,
-                position: {
-                  x: Math.max(
-                    MIN_X_POSITION,
-                    Math.min(
-                      MAX_X_POSITION,
-                      window.position?.x || 0 + position.x
-                    )
-                  ),
-                  y: Math.max(
-                    MIN_Y_POSITION,
-                    Math.min(
-                      MAX_Y_POSITION,
-                      (window.position?.y || 0) + position.y
-                    )
-                  ),
-                },
-              }
-            : window
-        );
-        return { windows: updatedWindows };
-      });
-    } else {
-      set((state) => {
-        const updatedWindows = state.windows.map((window) =>
-          window.id === id
-            ? {
-                ...window,
-                position: {
-                  x: Math.max(
-                    MIN_X_POSITION,
-                    Math.min(MAX_X_POSITION, position.x)
-                  ),
-                  y: Math.max(
-                    MIN_Y_POSITION,
-                    Math.min(MAX_Y_POSITION, position.y)
-                  ),
-                },
-              }
-            : window
-        );
-        return { windows: updatedWindows };
-      });
+    const currentPos = currentWindow.position || { x: 0, y: 0 };
+    const newPosition = relative
+      ? clampPosition({
+          x: currentPos.x + position.x,
+          y: currentPos.y + position.y,
+        })
+      : clampPosition(position);
+
+    // Update cache
+    positionCache.set(id, newPosition);
+
+    // Only update if position changed
+    if (currentPos.x !== newPosition.x || currentPos.y !== newPosition.y) {
+      set((state) => ({
+        windows: state.windows.map((win) =>
+          win.id === id ? { ...win, position: newPosition } : win,
+        ),
+      }));
     }
   },
 
   resizeWindow: (id, size, newpos) => {
-    set((state) => {
-      const updatedWindows = state.windows.map((window) =>
-        window.id === id
-          ? { ...window, size, position: { x: newpos.x, y: newpos.y } }
-          : window
-      );
-      return { windows: updatedWindows };
-    });
+    const clampedPosition = clampPosition(newpos);
+    positionCache.set(id, clampedPosition);
+
+    set((state) => ({
+      windows: state.windows.map((win) =>
+        win.id === id ? { ...win, size, position: clampedPosition } : win,
+      ),
+    }));
   },
+
   updateWindow: (id, updates) => {
-    set((state) => {
-      const updatedWindows = state.windows.map((window) =>
-        window.id === id ? { ...window, ...updates } : window
-      );
-      return { windows: updatedWindows };
-    });
+    // Cache position if it's being updated
+    if (updates.position) {
+      positionCache.set(id, updates.position);
+    }
+
+    set((state) => ({
+      windows: state.windows.map((win) =>
+        win.id === id ? { ...win, ...updates } : win,
+      ),
+    }));
   },
 }));

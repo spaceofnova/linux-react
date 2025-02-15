@@ -4,8 +4,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "shared/components/ui/context-menu";
-import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
-import Taskbar from "./components/taskbar/taskbar";
+import { useRegistryStore } from "shared/hooks/registry";
 
 import fs from "@zenfs/core";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,8 +13,9 @@ import { useAppStore } from "shared/hooks/appstore";
 export const Desktop = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const prefrences = usePrefrencesStore((state) => state.prefrences);
   const [wallpaperReady, setWallpaperReady] = useState(false);
+  const { getKey } = useRegistryStore();
+  const wallpaper = getKey("/user/wallpaper");
 
   const drawImageCover = useCallback(
     (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
@@ -38,7 +38,7 @@ export const Desktop = () => {
 
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -55,9 +55,9 @@ export const Desktop = () => {
 
     setCanvasSize();
 
-    if (prefrences.appearance?.userWallpaper) {
+    if (wallpaper) {
       try {
-        const imageData = fs.readFileSync(prefrences.appearance?.userWallpaper);
+        const imageData = fs.readFileSync(wallpaper);
         const blob = new Blob([imageData], { type: "image/*" });
         const url = URL.createObjectURL(blob);
 
@@ -82,7 +82,7 @@ export const Desktop = () => {
     } else {
       console.log("No wallpaper set");
     }
-  }, [prefrences.appearance?.userWallpaper, drawImageCover, wallpaperReady]);
+  }, [wallpaper, drawImageCover, wallpaperReady]);
 
   return (
     <>

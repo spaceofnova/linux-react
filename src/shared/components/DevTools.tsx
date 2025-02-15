@@ -1,4 +1,4 @@
-import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
+import { usePreferencesStore } from "shared/hooks/preferencesStore.ts";
 import { View } from "shared/components/ui/View";
 import { useState } from "react";
 import { Button } from "shared/components/ui/button";
@@ -9,8 +9,8 @@ import { Textarea } from "shared/components/ui/textarea";
 import { useLogStore } from "shared/hooks/logstore";
 
 export default function DevTools() {
-  const developerTools = usePrefrencesStore(
-    (state) => state.prefrences.developer.developerTools
+  const developerTools = usePreferencesStore(
+    (state) => state.preferences.developer.developerTools
   );
   const logs = useLogStore((state) => state.logs);
   const [isOpen, setIsOpen] = useState(true);

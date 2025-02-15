@@ -1,57 +1,57 @@
 import { showFilePicker } from "shared/components/FilePicker";
-import { useNotificationStore } from "shared/hooks/notifications";
-import { usePrefrencesStore } from "shared/hooks/prefrencesStore";
-
-export const settingsConfig = {
-  appearance: {
+import { useRegistryStore } from "shared/hooks/registry.ts";
+// Define our settings configuration structure
+export const settingsPages = [
+  {
+    title: "Appearance",
     description: "Customize the look and feel of your desktop",
     settings: [
       {
-        type: "string" as const,
+        type: "string",
         label: "Wallpaper URL",
-        prefrence: "userWallpaper",
+        key: "/user/wallpaper",
         defaultValue: "/system/assets/wallpaper.jpg",
       },
       {
-        type: "button" as const,
+        type: "button",
         label: "Select Wallpaper from File",
         secondaryLabel: "Select",
         onClick: async () => {
           const filePath = await showFilePicker();
           if (filePath) {
-            usePrefrencesStore
-              .getState()
-              .updatePrefrence("appearance.userWallpaper", filePath);
+            useRegistryStore.getState().setKey("/user/wallpaper", filePath);
           }
         },
       },
       {
-        type: "boolean" as const,
+        type: "boolean",
         label: "Transparency Effects",
-        prefrence: "blurEffects",
+        key: "/system/blur",
         defaultValue: true,
       },
     ],
   },
-  taskbar: {
+  {
+    title: "Taskbar",
     description: "Customize the look and feel of your taskbar",
     settings: [
       {
-        type: "boolean" as const,
+        type: "boolean",
         label: "Small Icons",
-        prefrence: "smallIcons",
+        key: "/user/taskbar/smallIcons",
         defaultValue: false,
       },
     ],
   },
-  display: {
+  {
+    title: "Display",
     description: "Display settings",
     settings: [
       {
-        type: "select" as const,
+        type: "select",
         label: "Screen Zoom",
-        prefrence: "screenZoom",
-        options: ["90%", "100%", "125%", "150%", "175%", "200%"] as const,
+        key: "/user/display/screenZoom",
+        options: ["90%", "100%", "125%", "150%", "175%", "200%"],
         defaultValue: "100%",
         valueMap: {
           "90%": 0.9,
@@ -63,7 +63,7 @@ export const settingsConfig = {
         },
       },
       {
-        type: "button" as const,
+        type: "button",
         label: "Reset Zoom",
         onClick: () => {
           console.log("Resetting zoom...");
@@ -71,30 +71,19 @@ export const settingsConfig = {
       },
     ],
   },
-  developer: {
+  {
+    title: "Developer",
     description: "Advanced settings for developers",
     settings: [
       {
-        type: "boolean" as const,
+        type: "boolean",
         label: "Debug Mode",
-        prefrence: "debugMode",
+        key: "/developer/debugMode",
         defaultValue: false,
       },
     ],
   },
-  hidden: {
-    description: "Hidden settings",
-    settings: [
-      {
-        type: "boolean" as const,
-        label: "Show Welcome App",
-        prefrence: "showWelcomeApp",
-        defaultValue: true,
-        hidden: true,
-      },
-    ],
-  },
-} as const;
+];
 
 export const UI_ASSETS_URL =
   "https://cdn.jsdelivr.net/gh/spaceofnova/linux-react-data-store@main/ui-assets.zip";

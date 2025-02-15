@@ -1,23 +1,14 @@
 import { useWindowStore } from "shared/hooks/windowStore";
 import { WindowType } from "shared/types/storeTypes";
 import { Rnd } from "react-rnd";
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Maximize2Icon, MinusIcon, X } from "lucide-react";
 import { ErrorBoundary } from "shared/components/ErrorBoundary";
 import { useAppStore } from "shared/hooks/appstore";
 import { MotionView } from "shared/components/ui/View";
 import { readFileSync } from "@zenfs/core";
 import { cn } from "shared/utils/cn";
-import { type Position, type Size } from "shared/types/general"
-
-type WindowProps = WindowType & {
-  isFocused?: boolean;
-};
+import { type Position, type Size } from "shared/types/general";
 
 // Move store actions outside component to prevent re-renders
 const windowActions = {
@@ -35,12 +26,8 @@ const windowActions = {
   minimize: (id: string) => useWindowStore.getState().minimizeWindow(id),
 };
 
-export const Window = React.memo<WindowProps>((props) => {
+export const Window = React.memo<WindowType>((props) => {
   const { id, title } = props;
-
-  // Early return if no id
-  if (!id) return null;
-
   // Replace state with ref
   const isDraggingRef = useRef(false);
   const [iframeDoc, setIframeDoc] = useState<string | null>(null);
@@ -74,7 +61,7 @@ export const Window = React.memo<WindowProps>((props) => {
   }, [id]);
 
   const renderControls = () => (
-    <div className="h-7 w-full inline-flex justify-between items-center bg-card titlebar">
+    <div className="h-7 w-full inline-flex justify-between items-center bg-card titlebar rounded-t-lg">
       <div className="inline-flex items-center gap-1.5 pl-1.5">
         <p className="text-xs font-medium">{title}</p>
       </div>
@@ -110,7 +97,7 @@ export const Window = React.memo<WindowProps>((props) => {
     <div
       className={cn(
         "w-full",
-        props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]"
+        props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]",
       )}
     >
       {props.ReactElement ? (
@@ -156,18 +143,17 @@ export const Window = React.memo<WindowProps>((props) => {
             width: parseInt(ref.style.width),
             height: parseInt(ref.style.height),
           },
-          position
+          position,
         );
       }}
       enableResizing={!props.noResize}
       onMouseDown={() => windowActions.focus(id)}
       dragHandleClassName="titlebar"
-      className="overflow-hidden"
     >
       <MotionView
         className={cn(
           "w-full h-full flex flex-col border",
-          props.isFocused ? undefined : "opacity-90"
+          props.isFocused ? undefined : "opacity-90",
         )}
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}

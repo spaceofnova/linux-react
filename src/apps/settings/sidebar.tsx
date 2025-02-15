@@ -1,17 +1,16 @@
 import { Button } from "shared/components/ui/button";
-import { PrefrenceSection } from "shared/types/settings";
 import { Input } from "shared/components/ui/input";
 import { Search } from "lucide-react";
 import { useNotificationStore } from "src/shared/hooks/notifications";
 
 interface SidebarProps {
   pages: {
-    title: PrefrenceSection;
+    title: string;
     description: string;
     component: React.ReactNode;
   }[];
-  activePage: PrefrenceSection | "home";
-  setActivePage: (page: PrefrenceSection | "home") => void;
+  activePage: string;
+  setActivePage: (page: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -25,7 +24,7 @@ const Sidebar = ({
 }: SidebarProps) => {
   const notify = useNotificationStore((state) => state.notify);
   return (
-    <div className="flex flex-col min-w-[160px] w-[30%] max-w-[200px] h-full bg-card">
+    <div className="flex flex-col min-w-[160px] w-[30%] max-w-[200px] h-full border-r border-border/30">
       <div className="p-1">
         <div className="relative">
           <Search className="absolute left-1.5 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3" />
