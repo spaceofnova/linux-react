@@ -18,9 +18,11 @@ import {
   LucideFileImage,
   Edit,
   Trash2,
+  LucidePlay,
 } from "lucide-react";
 import { FileEditor } from "./FileEditor";
 import { useWindowStore } from "shared/hooks/windowStore";
+import { useProcessStore } from "shared/hooks/processStore";
 
 interface FileInfo {
   name: string;
@@ -50,6 +52,7 @@ interface FileListItemProps {
   onDelete: (name: string) => void;
   onDoubleClick: (file: FileInfo) => void;
   setRenamingFile: (name: string | null) => void;
+  currentDirectory: string;
 }
 
 const FileListItem = ({
@@ -61,69 +64,88 @@ const FileListItem = ({
   onDelete,
   onDoubleClick,
   setRenamingFile,
-}: FileListItemProps) => (
-  <ContextMenu>
-    <ContextMenuTrigger>
-      <div
-        className="flex items-center justify-between p-1 px-2 hover:bg-accent transition-all duration-100 cursor-pointer"
-        onDoubleClick={() => onDoubleClick(file)}
-      >
-        <div className="flex items-center gap-2 flex-1">
-          {file.isDirectory ? (
-            <LucideFolder className="min-h-4 min-w-4 w-4 h-4" />
-          ) : (
-            iconMap[file.name.split(".").pop() as keyof typeof iconMap] || (
-              <LucideFile className="min-h-4 min-w-4 w-4 h-4" />
-            )
-          )}
-          {renamingFile === file.name ? (
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onRename(file.name, newName);
-                } else if (e.key === "Escape") {
-                  setRenamingFile(null);
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-              className="w-[200px]"
-            />
-          ) : (
-            <div>
-              <span>{file.name}</span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Created: {file.created} • Modified: {file.modified}
-              </span>
-            </div>
-          )}
+  currentDirectory,
+}: FileListItemProps) => {
+  const startProcess = useProcessStore((state) => state.startProcess);
+  const isJavaScript = file.name.endsWith(".js");
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <div
+          className="flex items-center justify-between p-1 px-2 hover:bg-accent transition-all duration-100 cursor-pointer"
+          onDoubleClick={() => onDoubleClick(file)}
+        >
+          <div className="flex items-center gap-2 flex-1">
+            {file.isDirectory ? (
+              <LucideFolder className="min-h-4 min-w-4 w-4 h-4" />
+            ) : (
+              iconMap[file.name.split(".").pop() as keyof typeof iconMap] || (
+                <LucideFile className="min-h-4 min-w-4 w-4 h-4" />
+              )
+            )}
+            {renamingFile === file.name ? (
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onRename(file.name, newName);
+                  } else if (e.key === "Escape") {
+                    setRenamingFile(null);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                className="w-[200px]"
+              />
+            ) : (
+              <div>
+                <span>{file.name}</span>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Created: {file.created} • Modified: {file.modified}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </ContextMenuTrigger>
-    <ContextMenuContent>
-      <ContextMenuItem
-        onClick={() => {
-          setRenamingFile(file.name);
-          setNewName(file.name);
-        }}
-      >
-        <Edit className="h-4 w-4 mr-2" />
-        Rename
-      </ContextMenuItem>
-      <ContextMenuItem onClick={() => onDelete(file.name)}>
-        <Trash2 className="h-4 w-4 mr-2" />
-        Delete
-      </ContextMenuItem>
-    </ContextMenuContent>
-  </ContextMenu>
-);
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        {isJavaScript && (
+          <ContextMenuItem
+            onClick={() => {
+              const fullPath = normalizePath(
+                `${currentDirectory}/${file.name}`,
+              );
+              startProcess(fullPath);
+            }}
+          >
+            <LucidePlay className="h-4 w-4 mr-2" />
+            Run
+          </ContextMenuItem>
+        )}
+        <ContextMenuItem
+          onClick={() => {
+            setRenamingFile(file.name);
+            setNewName(file.name);
+          }}
+        >
+          <Edit className="h-4 w-4 mr-2" />
+          Rename
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onDelete(file.name)}>
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+};
 
 interface TempFileInputProps {
   tempFile: { type: "file" | "directory"; name: string };
   setTempFile: (
-    file: { type: "file" | "directory"; name: string } | null
+    file: { type: "file" | "directory"; name: string } | null,
   ) => void;
   onSubmit: (name: string) => void;
 }
@@ -168,52 +190,59 @@ const FilesApp = () => {
   } | null>(null);
 
   const windowId = useWindowStore((state) => state.activeWindowId);
-  const window = useWindowStore((state) => state.windows.find(w => w.id === windowId));
+  const window = useWindowStore((state) =>
+    state.windows.find((w) => w.id === windowId),
+  );
   const updateWindow = useWindowStore((state) => state.updateWindow);
 
-  const listFiles = useCallback((path: string) => {
-    if (!fs) return;
+  const listFiles = useCallback(
+    (path: string) => {
+      if (!fs) return;
 
-    const normalizedPath = normalizePath(path);
+      const normalizedPath = normalizePath(path);
 
-    try {
-      const fileList = fs.readdirSync(normalizedPath);
-      const filesWithDates = fileList.map((fileName: string) => {
-        const stats = fs.statSync(
-          normalizePath(`${normalizedPath}/${fileName}`)
-        );
-        return {
-          name: fileName,
-          created: new Date(stats.birthtimeMs).toLocaleString(),
-          modified: new Date(stats.mtimeMs).toLocaleString(),
-          isDirectory: stats.isDirectory(),
-        };
-      });
+      try {
+        const fileList = fs.readdirSync(normalizedPath);
+        const filesWithDates = fileList.map((fileName: string) => {
+          const stats = fs.statSync(
+            normalizePath(`${normalizedPath}/${fileName}`),
+          );
+          return {
+            name: fileName,
+            created: new Date(stats.birthtimeMs).toLocaleString(),
+            modified: new Date(stats.mtimeMs).toLocaleString(),
+            isDirectory: stats.isDirectory(),
+          };
+        });
 
-      const sortedFiles = filesWithDates.sort((a, b) => {
-        if (a.isDirectory !== b.isDirectory) {
-          return a.isDirectory ? -1 : 1;
+        const sortedFiles = filesWithDates.sort((a, b) => {
+          if (a.isDirectory !== b.isDirectory) {
+            return a.isDirectory ? -1 : 1;
+          }
+          return a.name.localeCompare(b.name);
+        });
+
+        if (window?.pickerMode && window.fileTypes?.length) {
+          const filteredFiles = sortedFiles.filter(
+            (file) =>
+              file.isDirectory ||
+              window.fileTypes?.some((type) =>
+                file.name.toLowerCase().endsWith(type.toLowerCase()),
+              ),
+          );
+          setFiles(filteredFiles);
+        } else {
+          setFiles(sortedFiles);
         }
-        return a.name.localeCompare(b.name);
-      });
 
-      if (window?.pickerMode && window.fileTypes?.length) {
-        const filteredFiles = sortedFiles.filter(file => 
-          file.isDirectory || window.fileTypes?.some(type => 
-            file.name.toLowerCase().endsWith(type.toLowerCase())
-          )
-        );
-        setFiles(filteredFiles);
-      } else {
-        setFiles(sortedFiles);
+        setCurrentDirectory(normalizedPath);
+        setInputValue(normalizedPath);
+      } catch (error) {
+        console.error("Error reading directory:", error);
       }
-      
-      setCurrentDirectory(normalizedPath);
-      setInputValue(normalizedPath);
-    } catch (error) {
-      console.error("Error reading directory:", error);
-    }
-  }, [window]);
+    },
+    [window],
+  );
 
   useEffect(() => {
     listFiles(inputValue);
@@ -235,7 +264,7 @@ const FilesApp = () => {
         console.error("Error deleting file:", error);
       }
     },
-    [currentDirectory, listFiles]
+    [currentDirectory, listFiles],
   );
 
   const renameFile = useCallback(
@@ -244,7 +273,7 @@ const FilesApp = () => {
       try {
         fs.renameSync(
           normalizePath(`${currentDirectory}/${oldName}`),
-          normalizePath(`${currentDirectory}/${newName}`)
+          normalizePath(`${currentDirectory}/${newName}`),
         );
         setRenamingFile(null);
         listFiles(currentDirectory);
@@ -252,7 +281,7 @@ const FilesApp = () => {
         console.error("Error renaming file:", error);
       }
     },
-    [currentDirectory, listFiles]
+    [currentDirectory, listFiles],
   );
 
   const navigateToDirectory = useCallback(
@@ -260,7 +289,7 @@ const FilesApp = () => {
       const newPath = normalizePath(
         dirName === ".."
           ? currentDirectory.split("/").slice(0, -1).join("/") || "/"
-          : `${currentDirectory}/${dirName}`
+          : `${currentDirectory}/${dirName}`,
       );
 
       try {
@@ -270,7 +299,7 @@ const FilesApp = () => {
         console.error("Not a directory or error navigating:", error);
       }
     },
-    [currentDirectory, listFiles]
+    [currentDirectory, listFiles],
   );
 
   const handleItemClick = useCallback(
@@ -286,7 +315,13 @@ const FilesApp = () => {
         setSelectedFile(file.name);
       }
     },
-    [navigateToDirectory, window?.pickerMode, currentDirectory, windowId, updateWindow]
+    [
+      navigateToDirectory,
+      window?.pickerMode,
+      currentDirectory,
+      windowId,
+      updateWindow,
+    ],
   );
 
   const handleTempItemSubmit = useCallback(
@@ -306,7 +341,7 @@ const FilesApp = () => {
       }
       setTempFile(null);
     },
-    [currentDirectory, listFiles, tempFile]
+    [currentDirectory, listFiles, tempFile],
   );
 
   const handleUploadFile = useCallback(async () => {
@@ -331,7 +366,7 @@ const FilesApp = () => {
         if (isTextFile) {
           fs.writeFileSync(
             `${currentDirectory}/${file.name}`,
-            e.target.result.toString()
+            e.target.result.toString(),
           );
         } else {
           const buffer = new Uint8Array(e.target.result as ArrayBuffer);
@@ -389,6 +424,7 @@ const FilesApp = () => {
                   onDelete={deleteFile}
                   onDoubleClick={handleItemClick}
                   setRenamingFile={setRenamingFile}
+                  currentDirectory={currentDirectory}
                 />
               ))}
 

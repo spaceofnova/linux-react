@@ -4,6 +4,7 @@ import { AppStore } from "./store";
 import SettingsApp from "./settings";
 import WelcomeApp from "./welcome";
 import TerminalApp from "./terminal";
+import { ProcessesApp } from "apps/processes";
 
 export const internalApps: AppType[] = [
   {
@@ -66,6 +67,17 @@ export const internalApps: AppType[] = [
       title: "Terminal",
       ReactElement: TerminalApp,
       noControls: true,
+    },
+  },
+  {
+    id: "com.system.processes",
+    deepLink: "processes",
+    name: "Processes",
+    version: "1.0",
+    internal: true,
+    windowOptions: {
+      title: "Processes",
+      ReactElement: ProcessesApp,
     },
   },
 ];

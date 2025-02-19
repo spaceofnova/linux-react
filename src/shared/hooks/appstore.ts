@@ -27,18 +27,27 @@ type AppStoreActions = {
   getApps: () => AppType[];
   launchDeepLink: (deepLink: string) => Promise<void>;
 };
- 
-export const useAppStore = create<AppStoreState & AppStoreActions>()( 
+
+export const useAppStore = create<AppStoreState & AppStoreActions>()(
   persist(
     (set, get) => ({
       localApps: [],
       internalApps: [...internalApps],
-      enabledInternalApps: ["com.system.terminal", "com.system.store", "com.system.files", "com.system.settings", "com.system.welcome"],
+      enabledInternalApps: [
+        "com.system.terminal",
+        "com.system.store",
+        "com.system.files",
+        "com.system.settings",
+        "com.system.welcome",
+        "com.system.processes",
+      ],
 
       // Actions
       getApps: () => {
-        const enabledApps = get().enabledInternalApps
-          .map(id => get().internalApps.find(app => app.id === id))
+        const enabledApps = get()
+          .enabledInternalApps.map((id) =>
+            get().internalApps.find((app) => app.id === id),
+          )
           .filter((app): app is AppType => app !== undefined);
         return getApps(get().localApps, enabledApps);
       },
@@ -48,7 +57,11 @@ export const useAppStore = create<AppStoreState & AppStoreActions>()(
       },
 
       disableInternalApp: (appID: string) => {
-        set({ enabledInternalApps: get().enabledInternalApps.filter((id) => id !== appID) });
+        set({
+          enabledInternalApps: get().enabledInternalApps.filter(
+            (id) => id !== appID,
+          ),
+        });
       },
 
       setLocalApps: (apps) => set({ localApps: apps }),
@@ -152,9 +165,12 @@ export const useAppStore = create<AppStoreState & AppStoreActions>()(
     {
       name: "apps-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ localApps: state.localApps, enabledInternalApps: state.enabledInternalApps }), // Only persist neccesary data
-    }
-  )
+      partialize: (state) => ({
+        localApps: state.localApps,
+        enabledInternalApps: state.enabledInternalApps,
+      }), // Only persist neccesary data
+    },
+  ),
 );
 
 // App registration and watching functions
@@ -190,7 +206,7 @@ export const registerApps = async () => {
           }
         } else {
           console.error(
-            `Invalid metadata.json for app ${dir}: missing required fields`
+            `Invalid metadata.json for app ${dir}: missing required fields`,
           );
         }
       } catch (e) {

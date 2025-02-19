@@ -51,7 +51,7 @@ const functions = () => {
 
 functions();
 
-const App = () => {
+export const App = () => {
   if (setupLock === null) {
     return <Setup />;
   }

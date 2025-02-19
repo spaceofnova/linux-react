@@ -32,37 +32,38 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
   activeWindowId: null,
 
   // Original API maintained
-  createWindow: ({ ...window }: WindowType) => {
+
+  createWindow: ({ ...window }: Partial<WindowType>): string => {
     if (!window.id) {
       toast.error("Failed to launch window, no ID provided");
-      return;
+      throw new Error("Window ID is required");
     }
 
-    // Check existing window (original behavior)
+    // Check existing window
     if (get().windows.find((w) => w.id === window.id)) {
       get().focusWindow(window.id);
-      return;
+      return window.id;
     }
 
     const maxZIndex = Math.max(...get().windows.map((w) => w.zIndex || 0), -1);
-
-    // Use cached position if available
     const defaultPosition = window.position || { x: 100, y: 100 };
     const position = getCachedPosition(window.id, defaultPosition);
 
-    const newWindow = {
-      ...window,
+    const newWindow: WindowType = {
+      id: window.id,
       position,
       size: window.size || { width: 540, height: 400 },
       zIndex: maxZIndex + 1,
+      title: window.title || window.id,
+      ...window,
     };
 
     set((state) => ({
       windows: [...state.windows, newWindow],
       activeWindowId: window.id,
     }));
+    return window.id;
   },
-
   focusWindow: (id) => {
     set((state) => {
       if (!id) return { activeWindowId: null };
@@ -73,7 +74,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
 
       const maxZIndex = state.windows.reduce(
         (max, w) => Math.max(max, w.zIndex || 0),
-        0,
+        0
       );
 
       const updatedWindows = [...state.windows];
@@ -124,7 +125,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
                 height: window.innerHeight,
               },
             }
-          : win,
+          : win
       );
       return { windows: updatedWindows };
     });
@@ -139,7 +140,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
               isMinimized: true,
               position: win.prevPos || { x: 0, y: 0 },
             }
-          : win,
+          : win
       );
       return { windows: updatedWindows };
     });
@@ -155,7 +156,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
               size: win.prevSize,
               position: getCachedPosition(id, win.prevPos || { x: 0, y: 0 }),
             }
-          : win,
+          : win
       );
       return { windows: updatedWindows };
     });
@@ -180,7 +181,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
     if (currentPos.x !== newPosition.x || currentPos.y !== newPosition.y) {
       set((state) => ({
         windows: state.windows.map((win) =>
-          win.id === id ? { ...win, position: newPosition } : win,
+          win.id === id ? { ...win, position: newPosition } : win
         ),
       }));
     }
@@ -192,7 +193,15 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
 
     set((state) => ({
       windows: state.windows.map((win) =>
-        win.id === id ? { ...win, size, position: clampedPosition } : win,
+        win.id === id ? { ...win, size, position: clampedPosition } : win
+      ),
+    }));
+  },
+
+  onClose: (id, callback) => {
+    set((state) => ({
+      windows: state.windows.map((win) =>
+        win.id === id ? { ...win, onClose: callback } : win
       ),
     }));
   },
@@ -205,7 +214,7 @@ export const useWindowStore = create<WindowStoreType>()((set, get) => ({
 
     set((state) => ({
       windows: state.windows.map((win) =>
-        win.id === id ? { ...win, ...updates } : win,
+        win.id === id ? { ...win, ...updates } : win
       ),
     }));
   },

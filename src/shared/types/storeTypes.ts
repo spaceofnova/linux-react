@@ -12,7 +12,7 @@ export declare interface AppType {
   /** Path to app's folder on disk */
   folderPath?: string;
   /** Window configuration options */
-  windowOptions?: WindowType;
+  windowOptions?: Partial<WindowType>;
   /** Whether this is a built-in system app */
   internal?: boolean;
   /** Path or URL to app icon */
@@ -80,12 +80,14 @@ export declare interface WindowType {
   allowMultiple?: boolean;
   /** Currently selected file path */
   selectedFile?: string;
+  /** Callback when window is closed */
+  onClose?: () => void;
 }
 
 export interface WindowStoreType {
   windows: WindowType[];
   activeWindowId: string | null;
-  createWindow: (window: WindowType) => void;
+  createWindow: (window: Partial<WindowType>) => string;
   focusWindow: (id: string | null) => void;
   closeWindow: (id: string) => void;
   maximizeWindow: (id: string) => void;
@@ -94,6 +96,7 @@ export interface WindowStoreType {
   moveWindow: (id: string, position: Position, relative: boolean) => void;
   resizeWindow: (id: string, Size: Size, newpos: Position) => void;
   updateWindow: (id: string, updates: Partial<WindowType>) => void;
+  onClose: (id: string, callback: () => boolean) => void;
 }
 
 export interface NotificationType {

@@ -58,10 +58,11 @@ export const Window = React.memo<WindowType>((props) => {
 
   const handleClose = useCallback(() => {
     windowActions.close(id);
+    props.onClose?.();
   }, [id]);
 
   const renderControls = () => (
-    <div className="h-7 w-full inline-flex justify-between items-center bg-card titlebar rounded-t-lg">
+    <div className="h-7 w-full inline-flex justify-between items-center titlebar rounded-t-lg overflow-hidden">
       <div className="inline-flex items-center gap-1.5 pl-1.5">
         <p className="text-xs font-medium">{title}</p>
       </div>
@@ -83,7 +84,7 @@ export const Window = React.memo<WindowType>((props) => {
           </button>
         )}
         <button
-          className="h-7 w-11 flex items-center justify-center hover:bg-destructive"
+          className="h-7 w-11 flex items-center justify-center hover:bg-red-500/60"
           onClick={handleClose}
           title="Close"
         >
@@ -97,7 +98,7 @@ export const Window = React.memo<WindowType>((props) => {
     <div
       className={cn(
         "w-full",
-        props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]",
+        props.noControls ? "h-full" : "h-[calc(100%-1.75rem)]"
       )}
     >
       {props.ReactElement ? (
@@ -143,7 +144,7 @@ export const Window = React.memo<WindowType>((props) => {
             width: parseInt(ref.style.width),
             height: parseInt(ref.style.height),
           },
-          position,
+          position
         );
       }}
       enableResizing={!props.noResize}
@@ -153,7 +154,7 @@ export const Window = React.memo<WindowType>((props) => {
       <MotionView
         className={cn(
           "w-full h-full flex flex-col border",
-          props.isFocused ? undefined : "opacity-90",
+          props.isFocused ? undefined : "opacity-90"
         )}
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
