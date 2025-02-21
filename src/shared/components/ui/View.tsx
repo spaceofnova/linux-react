@@ -8,7 +8,7 @@ interface ViewProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const View = forwardRef<HTMLDivElement, ViewProps>(
-  ({ className, rounded = true, ...props }, ref) => {
+  ({ className, rounded = true, style, ...props }, ref) => {
     const blurEffects = useRegistryStore.getState().getKey("/system/blur");
     return (
       <div
@@ -16,6 +16,7 @@ const View = forwardRef<HTMLDivElement, ViewProps>(
         className={cn(className)}
         {...props}
         style={{
+          ...style,
           backgroundColor: blurEffects
             ? "hsla(var(--background) / 0.7)"
             : "hsl(var(--background))",
@@ -24,7 +25,7 @@ const View = forwardRef<HTMLDivElement, ViewProps>(
         }}
       />
     );
-  },
+  }
 );
 
 View.displayName = "View";
